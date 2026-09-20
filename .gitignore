@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/vendor/
+
+# Environment
+.env
+frontend/.env.local
+backend/.env
+backend/.env.backup
+
+# Database
+*.sqlite
+backend/database/database.sqlite
+
+# Production build
+frontend/dist/
+
+# Laravel Storage & Cache
+backend/storage/*.key
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+!backend/storage/logs/.gitignore
+!backend/storage/framework/cache/.gitignore
+!backend/storage/framework/sessions/.gitignore
+!backend/storage/framework/views/.gitignore
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
