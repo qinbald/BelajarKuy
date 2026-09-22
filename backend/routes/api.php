@@ -13,6 +13,7 @@ use App\Http\Controllers\Preference\PreferenceController;
 use App\Http\Controllers\Gallery\GalleryController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Dashboard\DashboardSummaryController;
 
 Route::middleware([\App\Http\Middleware\ForceJsonResponse::class])->group(function () {
     
@@ -24,6 +25,9 @@ Route::middleware([\App\Http\Middleware\ForceJsonResponse::class])->group(functi
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+
+        // Dashboard Summary (BFF Aggregate Endpoint)
+        Route::get('/dashboard/summary', [DashboardSummaryController::class, 'index']);
 
         // Subjects
         Route::apiResource('subjects', SubjectController::class);
