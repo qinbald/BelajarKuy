@@ -13,7 +13,12 @@ class LearningResultController extends Controller
 {
     public function index(Request $request)
     {
-        $query = $request->user()->learningResults()->with(['subject', 'grade']);
+        $query = $request->user()->learningResults()
+            ->select('id', 'user_id', 'subject_id', 'grade_id', 'title', 'file_name', 'file_size', 'file_type', 'visibility', 'created_at')
+            ->with([
+                'subject:id,name,color',
+                'grade:id,name'
+            ]);
 
         if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);

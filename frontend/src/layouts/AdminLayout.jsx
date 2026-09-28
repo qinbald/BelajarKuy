@@ -10,7 +10,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Beranda', href: '/admin', icon: LayoutDashboard },
     { name: 'Reports', href: '/admin/reports', icon: Flag },
   ];
 

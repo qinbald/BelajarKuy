@@ -17,6 +17,8 @@ class UserPreference extends Model
         'favorite_topics',
         'study_preferences',
         'tags',
+        'background_type',
+        'background_value',
     ];
 
     protected function casts(): array

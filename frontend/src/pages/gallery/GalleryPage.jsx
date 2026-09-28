@@ -1,11 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGallery } from '../../hooks/useGallery';
-import { Image as ImageIcon, UploadCloud, Trash2, Sparkles, Tag, Eye, Lock, Globe, AlertTriangle } from 'lucide-react';
+import { getExternalGallery } from '../../services/galleryService';
+import { Image as ImageIcon, UploadCloud, Trash2, Sparkles, Tag, Eye, Lock, Globe, AlertTriangle, Compass, Search, ExternalLink } from 'lucide-react';
 import client from '../../api/client';
 
 export default function GalleryPage() {
-  const [activeTab, setActiveTab] = useState('inspiration'); // 'personal' or 'inspiration'
-  const { items, userTags, loading, error, addItem, removeItem } = useGallery(activeTab);
+  const [activeTab, setActiveTab] = useState('inspiration'); // 'personal', 'inspiration', or 'external'
+  const { items, userTags, loading, error, addItem, removeItem } = useGallery(activeTab === 'external' ? 'personal' : activeTab);
+
+  // External (Unsplash / Pexels) state
+  const [externalItems, setExternalItems] = useState([]);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const [externalError, setExternalError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('study desk aesthetic');
+  const [searchSource, setSearchSource] = useState('all');
+
+  const fetchExternal = async (q = searchQuery, src = searchSource) => {
+    setExternalLoading(true);
+    setExternalError(null);
+    try {
+      const res = await getExternalGallery(q, src);
+      setExternalItems(res.data.data || []);
+    } catch (err) {
+      setExternalError(err.response?.data?.message || 'Gagal memuat gambar dari Unsplash / Pexels');
+    } finally {
+      setExternalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'external' && externalItems.length === 0) {
+      fetchExternal();
+    }
+  }, [activeTab]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({
@@ -149,6 +176,16 @@ export default function GalleryPage() {
         >
           <ImageIcon className="w-4 h-4" /> Koleksi Pribadi
         </button>
+        <button
+          onClick={() => setActiveTab('external')}
+          className={`pb-3 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
+            activeTab === 'external'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          <Compass className="w-4 h-4" /> Unsplash & Pexels
+        </button>
       </div>
 
       {error && (
@@ -169,8 +206,78 @@ export default function GalleryPage() {
         </div>
       )}
 
+      {/* External Search Bar */}
+      {activeTab === 'external' && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && fetchExternal()}
+              placeholder="Cari inspirasi (contoh: aesthetic desk, study notes)..."
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+          <select
+            value={searchSource}
+            onChange={(e) => setSearchSource(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="all">Semua Sumber</option>
+            <option value="unsplash">Unsplash</option>
+            <option value="pexels">Pexels</option>
+          </select>
+          <button
+            onClick={() => fetchExternal()}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition"
+          >
+            Cari
+          </button>
+        </div>
+      )}
+
       {/* Gallery Grid (Masonry-like using CSS columns) */}
-      {loading ? (
+      {activeTab === 'external' ? (
+        externalLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          </div>
+        ) : externalError ? (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            {externalError}
+          </div>
+        ) : externalItems.length === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+            <Compass className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="text-base font-semibold text-gray-800">Tidak ada hasil</h3>
+            <p className="text-sm text-gray-500 mt-1">Coba gunakan kata kunci pencarian lain.</p>
+          </div>
+        ) : (
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            {externalItems.map((item) => (
+              <div key={item.id} className="break-inside-avoid bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition group relative">
+                <div className="relative bg-gray-100">
+                  <img src={item.image_url} alt={item.title} className="w-full h-auto object-cover" loading="lazy" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-start justify-end p-2">
+                    <a href={item.source_url} target="_blank" rel="noreferrer" className="p-1.5 bg-white/90 hover:bg-blue-50 text-blue-600 rounded-lg backdrop-blur-sm transition" title="Buka di sumber asli">
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-900 text-sm leading-tight mb-1">{item.title}</h3>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Oleh: {item.author}</span>
+                    <span className="text-[10px] font-bold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">{item.source}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>

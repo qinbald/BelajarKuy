@@ -4,6 +4,9 @@ export const getPersonalGallery = () => client.get('/gallery');
 
 export const getRecommendations = () => client.get('/gallery/recommendations');
 
+export const getExternalGallery = (query = 'study aesthetic', source = 'all') => 
+  client.get(`/gallery/external?query=${encodeURIComponent(query)}&source=${source}`);
+
 export const getTags = () => client.get('/gallery/tags');
 
 export const uploadGalleryItem = (formData) => 

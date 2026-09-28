@@ -1,44 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import * as learningResultService from '../services/learningResultService';
 
-export function useLearningResults(subjectId = null) {
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function useLearningResults(subjectId = null, page = 1) {
+  const key = subjectId 
+    ? `/learning-results?page=${page}&subject_id=${subjectId}` 
+    : `/learning-results?page=${page}`;
 
-  const fetchResults = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await learningResultService.getLearningResults(1, subjectId);
-      setResults(res.data.data.data || []);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Gagal memuat hasil belajar');
-    } finally {
-      setLoading(false);
-    }
-  }, [subjectId]);
+  const fetcher = async () => {
+    const res = await learningResultService.getLearningResults(page, subjectId);
+    return res.data.data; // Returns the paginated object
+  };
 
-  useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+  const { data, error, isLoading, mutate } = useSWR(key, fetcher, {
+    keepPreviousData: true, // Keeps old data while fetching new page/filter
+    revalidateOnFocus: false,
+  });
 
   const addResult = async (formData) => {
     const res = await learningResultService.createLearningResult(formData);
-    setResults((prev) => [res.data.data, ...prev]);
+    mutate(); // Re-fetch to update list
     return res.data.data;
   };
 
-  const editResult = async (id, data) => {
-    const res = await learningResultService.updateLearningResult(id, data);
-    setResults((prev) => prev.map((r) => (r.id === id ? res.data.data : r)));
+  const editResult = async (id, formData) => {
+    const res = await learningResultService.updateLearningResult(id, formData);
+    mutate();
     return res.data.data;
   };
 
   const removeResult = async (id) => {
     await learningResultService.deleteLearningResult(id);
-    setResults((prev) => prev.filter((r) => r.id !== id));
+    mutate();
   };
 
-  return { results, loading, error, addResult, editResult, removeResult, refreshResults: fetchResults };
+  return { 
+    results: data?.data || [], 
+    pagination: data || null,
+    loading: isLoading, 
+    error: error?.response?.data?.message || error?.message, 
+    addResult, 
+    editResult, 
+    removeResult, 
+    refreshResults: mutate 
+  };
 }

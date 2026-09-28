@@ -10,7 +10,9 @@ use App\Http\Controllers\Grade\GradeController;
 use App\Http\Controllers\LearningResult\LearningResultController;
 use App\Http\Controllers\Analytics\AnalyticsController;
 use App\Http\Controllers\Preference\PreferenceController;
+use App\Http\Controllers\Preference\BackgroundController;
 use App\Http\Controllers\Gallery\GalleryController;
+use App\Http\Controllers\Gallery\ExternalGalleryController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Dashboard\DashboardSummaryController;
@@ -57,7 +59,14 @@ Route::middleware([\App\Http\Middleware\ForceJsonResponse::class])->group(functi
         Route::get('/preferences', [PreferenceController::class, 'show']);
         Route::post('/preferences', [PreferenceController::class, 'update']);
 
+        // Dashboard Background Customization
+        Route::get('/background', [BackgroundController::class, 'show']);
+        Route::post('/background', [BackgroundController::class, 'update']);
+        Route::post('/background/upload', [BackgroundController::class, 'upload']);
+        Route::delete('/background', [BackgroundController::class, 'reset']);
+
         // Gallery & Recommendations
+        Route::get('/gallery/external', [ExternalGalleryController::class, 'search']);
         Route::get('/gallery/recommendations', [GalleryController::class, 'recommendations']);
         Route::get('/gallery/tags', [GalleryController::class, 'tags']);
         Route::get('/gallery', [GalleryController::class, 'index']);

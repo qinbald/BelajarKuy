@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useDashboardSummary } from '../../hooks/useDashboardSummary';
+import { useTheme } from '../../contexts/ThemeContext';
 import { toggleTaskComplete } from '../../services/todoService';
 import VisionBoard from '../../components/dashboard/VisionBoard';
 import QuickNotes from '../../components/dashboard/QuickNotes';
+import BackgroundSettingsModal from '../../components/dashboard/BackgroundSettingsModal';
 import {
   BookOpen,
   ListTodo,
@@ -17,7 +19,8 @@ import {
   Clock,
   Calendar,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Palette
 } from 'lucide-react';
 import {
   BarChart,
@@ -32,7 +35,14 @@ import {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: summary, isLoading, error, refetch } = useDashboardSummary();
+  const { hasImage } = useTheme();
   const [tasks, setTasks] = useState([]);
+  const [isBgModalOpen, setIsBgModalOpen] = useState(false);
+
+  // Glassmorphism classes
+  const cardClass = hasImage 
+    ? 'bg-white/80 backdrop-blur-md border-white/40 shadow-sm' 
+    : 'bg-white border-gray-100 shadow-sm';
 
   useEffect(() => {
     if (summary?.tasks) {
@@ -71,6 +81,13 @@ export default function DashboardPage() {
           <p className="text-blue-100 text-sm mt-1">Siap untuk mencapai target belajar hari ini?</p>
         </div>
         <div className="flex items-center gap-2 relative z-10">
+          <button
+            onClick={() => setIsBgModalOpen(true)}
+            className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl text-sm font-medium transition backdrop-blur-sm"
+            title="Kustomisasi Background"
+          >
+            <Palette className="w-4 h-4" />
+          </button>
           <Link
             to="/timer"
             className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition backdrop-blur-sm"
@@ -110,63 +127,63 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {isLoading ? (
               [...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm animate-pulse space-y-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-xl" />
+                <div key={i} className={`${cardClass} p-4 rounded-2xl border animate-pulse space-y-3`}>
+                  <div className="w-10 h-10 bg-gray-200/50 rounded-xl" />
                   <div className="space-y-1.5">
-                    <div className="h-6 w-14 bg-gray-200 rounded" />
-                    <div className="h-3 w-20 bg-gray-100 rounded" />
+                    <div className="h-6 w-14 bg-gray-300/50 rounded" />
+                    <div className="h-3 w-20 bg-gray-200/50 rounded" />
                   </div>
                 </div>
               ))
             ) : (
               <>
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
-                  <div className="p-2.5 bg-orange-50 text-orange-600 rounded-xl w-fit">
+                <div className={`${cardClass} p-4 rounded-2xl border flex flex-col gap-3 hover:shadow-md transition-shadow`}>
+                  <div className="p-2.5 bg-orange-50/80 text-orange-600 rounded-xl w-fit">
                     <Flame className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">{summary?.analytics?.streak || 0}</h3>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Streak Hari</p>
+                    <p className="text-xs text-gray-600 font-medium mt-0.5">Streak Hari</p>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
-                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl w-fit">
+                <div className={`${cardClass} p-4 rounded-2xl border flex flex-col gap-3 hover:shadow-md transition-shadow`}>
+                  <div className="p-2.5 bg-blue-50/80 text-blue-600 rounded-xl w-fit">
                     <Clock className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">
                       {formatDuration(summary?.analytics?.today_seconds)}
                     </h3>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Belajar Hari Ini</p>
+                    <p className="text-xs text-gray-600 font-medium mt-0.5">Belajar Hari Ini</p>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
-                  <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl w-fit">
+                <div className={`${cardClass} p-4 rounded-2xl border flex flex-col gap-3 hover:shadow-md transition-shadow`}>
+                  <div className="p-2.5 bg-indigo-50/80 text-indigo-600 rounded-xl w-fit">
                     <ListTodo className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">{summary?.analytics?.tasks_completed || 0}</h3>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Tugas Selesai</p>
+                    <p className="text-xs text-gray-600 font-medium mt-0.5">Tugas Selesai</p>
                   </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
-                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl w-fit">
+                <div className={`${cardClass} p-4 rounded-2xl border flex flex-col gap-3 hover:shadow-md transition-shadow`}>
+                  <div className="p-2.5 bg-emerald-50/80 text-emerald-600 rounded-xl w-fit">
                     <BookOpen className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">{summary?.subjects_count || 0}</h3>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">Mata Pelajaran</p>
+                    <p className="text-xs text-gray-600 font-medium mt-0.5">Mata Pelajaran</p>
                   </div>
                 </div>
               </>
             )}
           </div>
 
-          {/* Study Time Chart (Fixed min-height avoids layout thrashing in Recharts) */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          {/* Study Time Chart */}
+          <div className={`${cardClass} rounded-2xl border p-5`}>
             <h2 className="text-base font-bold text-gray-900 mb-4">Waktu Belajar (7 Hari Terakhir)</h2>
             <div className="h-56 min-h-[224px] w-full">
               {isLoading ? (
@@ -213,8 +230,8 @@ export default function DashboardPage() {
 
           {/* Tasks & Schedule Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Today's Schedule (Progressive Skeleton) */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            {/* Today's Schedule */}
+            <div className={`${cardClass} rounded-2xl border p-5`}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-gray-900">Jadwal Hari Ini</h2>
                 <Link
@@ -262,8 +279,8 @@ export default function DashboardPage() {
               )}
             </div>
 
-            {/* Pending Tasks (Progressive Skeleton) */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            {/* Pending Tasks */}
+            <div className={`${cardClass} rounded-2xl border p-5`}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-gray-900">Tugas Tertunda</h2>
                 <Link
@@ -327,7 +344,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Notes — Full Width */}
-      <QuickNotes />
+      <div className={hasImage ? '[&>div]:bg-white/80 [&>div]:backdrop-blur-md [&>div]:border-white/40' : ''}>
+        <QuickNotes />
+      </div>
+
+      <BackgroundSettingsModal isOpen={isBgModalOpen} onClose={() => setIsBgModalOpen(false)} />
     </div>
   );
 }
