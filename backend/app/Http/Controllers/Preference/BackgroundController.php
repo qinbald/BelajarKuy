@@ -16,11 +16,16 @@ class BackgroundController extends Controller
     {
         $pref = $request->user()->preference;
 
+        $value = $pref?->background_value;
+        if ($pref?->background_type === 'custom_image' && $value) {
+            $value = Storage::url($value);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
                 'background_type' => $pref?->background_type ?? 'color',
-                'background_value' => $pref?->background_value,
+                'background_value' => $value,
             ],
         ]);
     }
@@ -40,11 +45,16 @@ class BackgroundController extends Controller
             $validated
         );
 
+        $value = $pref->background_value;
+        if ($pref->background_type === 'custom_image' && $value) {
+            $value = Storage::url($value);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
                 'background_type' => $pref->background_type,
-                'background_value' => $pref->background_value,
+                'background_value' => $value,
             ],
         ]);
     }
@@ -65,7 +75,7 @@ class BackgroundController extends Controller
         // Delete old custom background if exists
         $pref = $user->preference;
         if ($pref && $pref->background_type === 'custom_image' && $pref->background_value) {
-            Storage::disk('public')->delete($pref->background_value);
+            Storage::delete($pref->background_value);
         }
 
         // Compress with GD to WebP, max 1920px wide
@@ -90,15 +100,15 @@ class BackgroundController extends Controller
         }
 
         $filename = 'bg_' . $user->id . '_' . Str::random(12) . '.webp';
-        $dir = storage_path('app/public/backgrounds');
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-        $path = $dir . '/' . $filename;
-        imagewebp($image, $path, 80);
+        $storagePath = 'backgrounds/' . $filename;
+
+        // Save to memory then to Storage
+        ob_start();
+        imagewebp($image, null, 80);
+        $imageContent = ob_get_clean();
         imagedestroy($image);
 
-        $storagePath = 'backgrounds/' . $filename;
+        Storage::put($storagePath, $imageContent);
 
         $pref = $user->preference()->updateOrCreate(
             ['user_id' => $user->id],
@@ -112,8 +122,8 @@ class BackgroundController extends Controller
             'success' => true,
             'data' => [
                 'background_type' => $pref->background_type,
-                'background_value' => $pref->background_value,
-                'background_url' => asset('storage/' . $storagePath),
+                'background_value' => Storage::url($storagePath),
+                'background_url' => Storage::url($storagePath),
             ],
         ]);
     }
@@ -127,7 +137,7 @@ class BackgroundController extends Controller
         $pref = $user->preference;
 
         if ($pref && $pref->background_type === 'custom_image' && $pref->background_value) {
-            Storage::disk('public')->delete($pref->background_value);
+            Storage::delete($pref->background_value);
         }
 
         $pref?->update([

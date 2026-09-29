@@ -1,4 +1,5 @@
 import { Menu } from 'lucide-react';
+import FloatingTimer from './FloatingTimer';
 
 export default function Navbar({ onMenuClick }) {
   return (
@@ -12,8 +13,8 @@ export default function Navbar({ onMenuClick }) {
       
       <div className="flex-1" />
       
-      <div className="flex items-center gap-4">
-        {/* Placeholder for notifications or profile dropdown */}
+      <div className="flex items-center gap-3">
+        <FloatingTimer />
       </div>
     </header>
   );

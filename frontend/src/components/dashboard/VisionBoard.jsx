@@ -10,7 +10,9 @@ import {
   Check,
   Image as ImageIcon,
   ExternalLink,
-  Plus
+  Plus,
+  Maximize2,
+  Edit3
 } from 'lucide-react';
 
 export const INITIAL_PINNED_IMAGES = [
@@ -188,10 +190,26 @@ export default function VisionBoard() {
 
                 {/* Normal Hover Overlay (View Mode) */}
                 {!isEditing && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end p-2.5">
-                    <span className="text-white text-xs font-medium truncate drop-shadow-sm">
-                      {img.title}
-                    </span>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Gradient tipis hanya di atas */}
+                    <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/50 to-transparent rounded-t-2xl" />
+                    {/* Tombol aksi kanan atas */}
+                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                      <button
+                        title="Perbesar"
+                        onClick={() => window.open(img.url, '_blank')}
+                        className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur-md border border-white/30 text-white rounded-lg transition"
+                      >
+                        <Maximize2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        title="Ganti gambar"
+                        onClick={() => removeItem(img.id)}
+                        className="p-1.5 bg-white/20 hover:bg-red-500/70 backdrop-blur-md border border-white/30 text-white rounded-lg transition"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 )}
 

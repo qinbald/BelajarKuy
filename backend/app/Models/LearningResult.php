@@ -25,7 +25,7 @@ class LearningResult extends Model
     public function getFileUrlAttribute(): ?string
     {
         if ($this->file_path) {
-            return asset('storage/' . $this->file_path);
+            return Storage::url($this->file_path);
         }
         return null;
     }

@@ -1,58 +1,41 @@
-import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import * as galleryService from '../services/galleryService';
+import client from '../api/client';
 
-export function useGallery(tab = 'personal') {
-  const [items, setItems] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [userTags, setUserTags] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const fetcher = (url) => client.get(url).then((res) => res.data);
 
-  const fetchItems = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (tab === 'personal') {
-        const res = await galleryService.getPersonalGallery();
-        setItems(res.data.data);
-      } else {
-        const res = await galleryService.getRecommendations();
-        setItems(res.data.data);
-        setUserTags(res.data.user_tags || []);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Gagal memuat galeri');
-    } finally {
-      setLoading(false);
-    }
-  }, [tab]);
+export function useGallery(tab = 'personal', page = 1) {
+  const endpoint = tab === 'personal' ? `/gallery?page=${page}` : `/gallery/recommendations?page=${page}`;
+  
+  const { data, error, isLoading, mutate } = useSWR(endpoint, fetcher, {
+    keepPreviousData: true,
+    revalidateOnFocus: false,
+  });
 
-  const fetchTags = useCallback(async () => {
-    try {
-      const res = await galleryService.getTags();
-      setTags(res.data.data);
-    } catch (err) {
-      // quiet fail for tag options
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchItems();
-    fetchTags();
-  }, [fetchItems, fetchTags]);
+  const { data: tagsData } = useSWR('/gallery/tags', fetcher, {
+    revalidateOnFocus: false,
+  });
 
   const addItem = async (formData) => {
     const res = await galleryService.uploadGalleryItem(formData);
-    if (tab === 'personal') {
-      setItems((prev) => [res.data.data, ...prev]);
-    }
+    mutate(); // Revalidate list
     return res.data.data;
   };
 
   const removeItem = async (id) => {
     await galleryService.deleteGalleryItem(id);
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    mutate(); // Revalidate list
   };
 
-  return { items, tags, userTags, loading, error, addItem, removeItem, refreshItems: fetchItems };
+  return {
+    items: data?.data || [],
+    meta: data?.meta || null,
+    tags: tagsData?.data || [],
+    userTags: data?.user_tags || [],
+    loading: isLoading,
+    error: error?.response?.data?.message || (error ? 'Gagal memuat galeri' : null),
+    addItem,
+    removeItem,
+    refreshItems: mutate,
+  };
 }

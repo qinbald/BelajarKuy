@@ -28,33 +28,37 @@ class SubjectController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'code' => 'nullable|string|max:30',
-            'teacher' => 'nullable|string|max:100',
+            'name'        => 'required|string|max:100',
+            'code'        => 'nullable|string|max:30',
+            'teacher'     => 'nullable|string|max:100',
             'description' => 'nullable|string',
-            'color' => 'nullable|string|max:7|regex:/^#[a-fA-F0-9]{6}$/',
+            'color'       => 'nullable|string|max:7',
+            'target_grade'=> 'nullable|integer|min:0|max:100',
+            'category_weights' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
         $subject = $request->user()->subjects()->create([
-            'name' => $request->name,
-            'code' => $request->code,
-            'teacher' => $request->teacher,
+            'name'        => $request->name,
+            'code'        => $request->code,
+            'teacher'     => $request->teacher,
             'description' => $request->description,
-            'color' => $request->color ?? '#3B82F6',
+            'color'       => $request->color ?? '#3B82F6',
+            'target_grade'=> $request->target_grade,
+            'category_weights' => $request->category_weights,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Mata pelajaran berhasil ditambahkan',
-            'data' => $subject
+            'data'    => $subject
         ], 201);
     }
 
@@ -66,14 +70,14 @@ class SubjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Mata pelajaran tidak ditemukan',
-                'errors' => null
+                'errors'  => null
             ], 404);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Detail mata pelajaran berhasil diambil',
-            'data' => $subject
+            'data'    => $subject
         ]);
     }
 
@@ -84,33 +88,34 @@ class SubjectController extends Controller
         if (!$subject) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mata pelajaran tidak ditemukan',
-                'errors' => null
+                'message' => 'Mata pelajaran tidak ditemukan'
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:100',
-            'code' => 'nullable|string|max:30',
-            'teacher' => 'nullable|string|max:100',
+            'name'        => 'sometimes|required|string|max:100',
+            'code'        => 'nullable|string|max:30',
+            'teacher'     => 'nullable|string|max:100',
             'description' => 'nullable|string',
-            'color' => 'nullable|string|max:7|regex:/^#[a-fA-F0-9]{6}$/',
+            'color'       => 'nullable|string|max:7',
+            'target_grade'=> 'nullable|integer|min:0|max:100',
+            'category_weights' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
 
-        $subject->update($request->only(['name', 'code', 'teacher', 'description', 'color']));
+        $subject->update($request->only(['name', 'code', 'teacher', 'description', 'color', 'target_grade', 'category_weights']));
 
         return response()->json([
             'success' => true,
             'message' => 'Mata pelajaran berhasil diperbarui',
-            'data' => $subject
+            'data'    => $subject
         ]);
     }
 
@@ -121,8 +126,7 @@ class SubjectController extends Controller
         if (!$subject) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mata pelajaran tidak ditemukan',
-                'errors' => null
+                'message' => 'Mata pelajaran tidak ditemukan'
             ], 404);
         }
 
@@ -130,8 +134,7 @@ class SubjectController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Mata pelajaran berhasil dihapus',
-            'data' => null
+            'message' => 'Mata pelajaran berhasil dihapus'
         ]);
     }
 }

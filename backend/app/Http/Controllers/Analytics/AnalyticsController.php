@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Analytics;
 
 use App\Http\Controllers\Controller;
+use App\Services\GradeAnalyzerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, GradeAnalyzerService $gradeAnalyzer)
     {
         $user = $request->user();
         $now = Carbon::now();
@@ -27,19 +28,18 @@ class AnalyticsController extends Controller
             ->whereBetween('start_time', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])
             ->sum('duration_seconds');
 
-        // 2. Rata-rata nilai per subject
-        $gradesPerSubject = $user->grades()
-            ->select('subject_id', DB::raw('AVG((score / max_score) * 100) as avg_percentage'))
-            ->groupBy('subject_id')
-            ->with('subject:id,name,color')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'subject_name' => $item->subject->name ?? 'Unknown',
-                    'color' => $item->subject->color ?? '#ccc',
-                    'avg_percentage' => round($item->avg_percentage, 2),
-                ];
-            });
+        // 2. Rata-rata nilai per subject (weighted by category)
+        $subjects = $user->subjects()->with('grades')->get();
+        $gradesPerSubject = $subjects->map(function ($subject) use ($gradeAnalyzer, $user) {
+            $stats = $gradeAnalyzer->calculateWeightedScore($subject, $user->id);
+            return [
+                'subject_id' => $subject->id,
+                'subject_name' => $subject->name,
+                'color' => $subject->color,
+                'avg_percentage' => $stats['current_score'],
+                'grade_count' => $stats['grade_count'],
+            ];
+        })->filter(fn($item) => $item['grade_count'] > 0)->values();
 
         // 3. Jumlah task selesai vs pending
         $tasksCompleted = $user->tasks()->where('status', 'completed')->count();
@@ -90,16 +90,17 @@ class AnalyticsController extends Controller
             'data' => [
                 'study_time' => [
                     'today_seconds' => (int) $studyTimeToday,
-                    'week_seconds' => (int) $studyTimeWeek,
+                    'week_seconds'  => (int) $studyTimeWeek,
                     'month_seconds' => (int) $studyTimeMonth,
                 ],
-                'grades_chart' => $gradesPerSubject,
+                'grades_chart'     => $gradesPerSubject,
                 'tasks' => [
                     'completed' => $tasksCompleted,
-                    'pending' => $tasksPending,
+                    'pending'   => $tasksPending,
                 ],
-                'streak' => $streak,
-                'study_chart' => $last7Days,
+                'streak'           => $streak,
+                'study_chart'      => $last7Days,
+                'critical_subjects'=> $gradeAnalyzer->analyze($user),
             ]
         ]);
     }

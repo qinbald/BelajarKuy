@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import { Flag, CheckCircle, Clock, AlertTriangle, ExternalLink } from 'lucide-react';
+import GlassLoader from '../../components/common/GlassLoader';
 
 const AdminReportsPage = () => {
   const [reports, setReports] = useState([]);
@@ -71,7 +72,7 @@ const AdminReportsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        <GlassLoader />
       </div>
     );
   }

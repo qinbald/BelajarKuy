@@ -13,6 +13,9 @@ import {
   Globe,
 } from 'lucide-react';
 
+import PageHeader from '../../components/common/PageHeader';
+import GlassLoader from '../../components/common/GlassLoader';
+
 export default function LearningResultPage() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const { subjects } = useSubjects();
@@ -93,20 +96,17 @@ export default function LearningResultPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Berkas & Hasil Belajar</h1>
-          <p className="text-sm text-gray-500">
-            Simpan catatan, dokumen tugas, sertifikat, dan artefak belajar Anda
-          </p>
-        </div>
+      <PageHeader 
+        title="Berkas & Hasil Belajar" 
+        subtitle="Simpan catatan, dokumen tugas, sertifikat, dan artefak belajar Anda"
+      >
         <button
           onClick={openAddModal}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
         >
           <UploadCloud className="w-4 h-4" /> Unggah Berkas
         </button>
-      </div>
+      </PageHeader>
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
@@ -135,7 +135,7 @@ export default function LearningResultPage() {
       {/* Results Grid */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <GlassLoader />
         </div>
       ) : results.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
@@ -349,10 +349,7 @@ export default function LearningResultPage() {
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition disabled:opacity-50"
                 >
                   {uploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Mengunggah...</span>
-                    </>
+                    <GlassLoader small text="Mengunggah..." />
                   ) : (
                     'Unggah Sekarang'
                   )}

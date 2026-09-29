@@ -5,9 +5,17 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Services\PredictionService;
 
 class DashboardSummaryController extends Controller
 {
+    protected $predictionService;
+
+    public function __construct(PredictionService $predictionService)
+    {
+        $this->predictionService = $predictionService;
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -27,8 +35,14 @@ class DashboardSummaryController extends Controller
             ->limit(5)
             ->get();
 
-        // 2. Subjects (Count)
+        // 2. Subjects (Count & Conquest & Probability)
         $subjectsCount = $user->subjects()->count();
+        $subjects = $user->subjects()->select('id', 'name', 'conquest_progress')->get();
+        
+        // Hitung probabilitas kelulusan untuk tiap subject
+        $subjects->each(function ($subject) {
+            $subject->passing_probability = $this->predictionService->calculatePassingProbability($subject);
+        });
 
         // 3. Schedules (Today)
         $todaySchedules = $user->schedules()
@@ -86,8 +100,13 @@ class DashboardSummaryController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
+                'user' => [
+                    'exp' => $user->exp,
+                    'tactical_rank' => $user->tactical_rank,
+                ],
                 'tasks' => $pendingTasks,
                 'subjects_count' => $subjectsCount,
+                'subjects' => $subjects,
                 'schedules' => $todaySchedules,
                 'analytics' => [
                     'today_seconds' => (int) $studyTimeToday,

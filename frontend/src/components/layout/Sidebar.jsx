@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { cn } from '../../utils/cn';
 import {
   LayoutDashboard,
   ListTodo,
@@ -11,60 +12,114 @@ import {
   StickyNote,
   Image,
   BarChart3,
-  Settings,
   Shield,
   BookOpen,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
+  ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
+  Layers,
+  Compass,
+  Focus,
 } from 'lucide-react';
 
-const navItems = [
-  { to: '/dashboard', label: 'Beranda', icon: LayoutDashboard },
-  { to: '/subjects', label: 'Mata Pelajaran', icon: BookOpen },
-  { to: '/todos', label: 'Tugas', icon: ListTodo },
-  { to: '/notes', label: 'Catatan', icon: StickyNote },
-  { to: '/schedule', label: 'Jadwal', icon: Calendar },
-  { to: '/timer', label: 'Timer', icon: Timer },
-  { to: '/grades', label: 'Nilai', icon: GraduationCap },
-  { to: '/results', label: 'Hasil Belajar', icon: FileText },
-  { to: '/gallery', label: 'Galeri', icon: Image },
-  { to: '/analytics', label: 'Analitik', icon: BarChart3 },
+const navStructure = [
+  { title: 'Beranda', path: '/dashboard', icon: LayoutDashboard },
+  {
+    title: 'Akademik',
+    icon: BookOpen,
+    children: [
+      { title: 'Mata Pelajaran', path: '/subjects', icon: BookOpen },
+      { title: 'Jadwal', path: '/schedule', icon: Calendar },
+      { title: 'Tugas', path: '/todos', icon: ListTodo },
+      { title: 'Catatan', path: '/notes', icon: StickyNote },
+      { title: 'Evaluasi', path: '/grades', icon: GraduationCap, altPaths: ['/results'] },
+    ],
+  },
+  {
+    title: 'Eksplorasi',
+    icon: Compass,
+    children: [
+      { title: 'Analitik', path: '/analytics', icon: BarChart3 },
+      { title: 'Galeri', path: '/gallery', icon: Image },
+    ],
+  },
 ];
 
-const adminItems = [
-  { to: '/admin', label: 'Admin Panel', icon: Shield },
-];
+const adminItems = [{ to: '/admin', label: 'Admin Panel', icon: Shield }];
+
+function isPathActive(pathname, item) {
+  if (pathname === item.path || pathname.startsWith(item.path + '/')) return true;
+  if (item.altPaths) return item.altPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  return false;
+}
+
+function isParentActive(pathname, parent) {
+  if (!parent.children) return false;
+  return parent.children.some((c) => isPathActive(pathname, c));
+}
 
 export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }) {
   const { pathname } = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const sidebarRef = useRef(null);
+  const navRefs = useRef({});
+  const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
+  const [openMenus, setOpenMenus] = useState(() => {
+    const active = navStructure.filter((n) => n.children && isParentActive(pathname, n)).map((n) => n.title);
+    return active;
+  });
+
+  // Auto-expand parent when child becomes active (e.g. on refresh / navigation)
+  useEffect(() => {
+    const activeParents = navStructure.filter((n) => n.children && isParentActive(pathname, n)).map((n) => n.title);
+    if (activeParents.length) {
+      setOpenMenus((prev) => {
+        const merged = new Set([...prev, ...activeParents]);
+        return [...merged];
+      });
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
-  const isActive = (to) => pathname.startsWith(to);
+  const toggleMenu = (title) => {
+    setOpenMenus((prev) => (prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]));
+  };
 
-  const linkBase = 'flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out';
-  const linkClass = (to) =>
-    `${linkBase} ${
-      isActive(to)
-        ? 'bg-blue-50 text-blue-700'
-        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+  const isActive = (to) => pathname === to || pathname.startsWith(to + '/');
+
+  // Sliding pill for active child
+  useEffect(() => {
+    const allChildPaths = navStructure.flatMap((n) => (n.children ? n.children : [n]));
+    // also include top-level Beranda
+    const activeChild = allChildPaths.find((c) => isPathActive(pathname, c));
+    const key = activeChild?.path;
+    if (key && navRefs.current[key]) {
+      const el = navRefs.current[key];
+      setIndicatorStyle({ top: el.offsetTop, height: el.offsetHeight, opacity: 1 });
+    } else if (pathname.startsWith('/admin') && navRefs.current['/admin']) {
+      const el = navRefs.current['/admin'];
+      setIndicatorStyle({ top: el.offsetTop, height: el.offsetHeight, opacity: 1 });
+    } else {
+      setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+    }
+  }, [pathname, openMenus, isCollapsed]);
+
+  const childLinkClass = (path) =>
+    `relative z-10 flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+      isPathActive(pathname, { path, altPaths: navStructure.flatMap((n) => n.children || []).find((c) => c.path === path)?.altPaths })
+        ? 'bg-blue-50/50 text-blue-700'
+        : 'text-gray-600 hover:text-gray-900'
     } ${isCollapsed ? 'justify-center' : ''}`;
 
   return (
     <>
-      {/* Overlay mobile */}
-      {open && (
-        <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={onClose} />
-      )}
+      {open && <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={onClose} />}
 
       <aside
         ref={sidebarRef}
@@ -79,35 +134,121 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
         </div>
 
         {/* Nav */}
-        <nav className={`flex-1 px-3 py-4 space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto overflow-x-hidden'}`}>
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <div key={to} className={`relative ${isCollapsed ? 'group' : ''}`}>
-              <Link to={to} className={linkClass(to)} onClick={onClose}>
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{label}</span>
-              </Link>
-              {/* Glassmorphism pop-out (collapsed only, CSS-only) */}
-              {isCollapsed && (
-                <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
-                  <Icon className={`w-6 h-6 shrink-0 transition-transform duration-100 ${isActive(to) ? 'text-blue-700' : 'text-gray-700'}`} />
-                  <span className={`text-sm font-semibold ${isActive(to) ? 'text-blue-700' : 'text-gray-800'}`}>{label}</span>
+        <nav className={`relative flex-1 px-3 py-4 space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto overflow-x-hidden'}`}>
+          {/* Sliding Indicator */}
+          <div
+            className="absolute top-0 left-3 right-3 bg-blue-50 rounded-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-0 pointer-events-none"
+            style={{
+              transform: `translate3d(0, ${indicatorStyle.top}px, 0)`,
+              height: `${indicatorStyle.height}px`,
+              opacity: indicatorStyle.opacity,
+            }}
+          />
+
+          {navStructure.map((item) => {
+            const hasChildren = !!item.children;
+            const isOpen = openMenus.includes(item.title);
+            const parentActive = hasChildren && isParentActive(pathname, item);
+            const ParentIcon = item.icon;
+
+            if (!hasChildren) {
+              // Top-level Beranda
+              return (
+                <div key={item.path} className={`relative ${isCollapsed ? 'group' : ''}`} ref={(el) => (navRefs.current[item.path] = el)}>
+                  <Link to={item.path} className={childLinkClass(item.path)} onClick={onClose}>
+                    <ParentIcon className={cn("w-5 h-5 shrink-0 transition-colors duration-200", isPathActive(pathname, item) ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
+                    <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{item.title}</span>
+                  </Link>
+                  {isCollapsed && (
+                    <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
+                      <ParentIcon className={cn("w-6 h-6 shrink-0", isPathActive(pathname, item) ? "text-blue-600" : "text-slate-400")} />
+                      <span className={`text-sm font-semibold ${isPathActive(pathname, item) ? 'text-blue-700' : 'text-gray-800'}`}>{item.title}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            }
+
+            // Parent with accordion
+            return (
+              <div key={item.title} className={`relative ${isCollapsed ? 'group' : ''}`}>
+                <button
+                  onClick={() => !isCollapsed && toggleMenu(item.title)}
+                  className={`relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                    parentActive ? 'text-blue-700 font-semibold' : 'text-gray-600 hover:text-gray-900'
+                  } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <ParentIcon className={cn("w-5 h-5 shrink-0 transition-colors duration-200", parentActive ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
+                    <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{item.title}</span>
+                  </span>
+                  {!isCollapsed && (
+                    <ChevronDown className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
+                  )}
+                </button>
+
+                {/* Collapsed: show children as pop-out on hover */}
+                {isCollapsed ? (
+                  <div className="absolute left-full top-0 ml-2 opacity-0 invisible translate-x-[-10px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50 pointer-events-none before:absolute before:-left-2 before:top-0 before:w-2 before:h-full">
+                    <div className="bg-white/80 backdrop-blur-xl border border-white/40 shadow-xl rounded-xl p-2 min-w-[180px]">
+                      <p className="text-xs font-bold text-gray-500 px-2 py-1 uppercase tracking-wider">{item.title}</p>
+                      {item.children.map((child) => {
+                        const ChildIcon = child.icon;
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            onClick={onClose}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm group/child ${isPathActive(pathname, child) ? 'bg-blue-50/50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                          >
+                            <ChildIcon className={cn("w-4 h-4 shrink-0 transition-colors duration-200", isPathActive(pathname, child) ? "text-blue-600" : "text-slate-400 group-hover/child:text-blue-500")} />
+                            {child.title}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  /* Expanded: fluid grid accordion */
+                  <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                      <div className="ml-3 pl-3 border-l border-gray-100 space-y-0.5 py-1">
+                        {item.children.map((child) => {
+                          const ChildIcon = child.icon;
+                          const active = isPathActive(pathname, child);
+                          return (
+                            <div key={child.path} ref={(el) => (navRefs.current[child.path] = el)} className="relative">
+                              <Link
+                                to={child.path}
+                                onClick={onClose}
+                                className={`relative z-10 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200 group/child ${active ? 'bg-blue-50/50 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}
+                              >
+                                <ChildIcon className={cn("w-4 h-4 shrink-0 transition-colors duration-200", active ? "text-blue-600" : "text-slate-400 group-hover/child:text-blue-500")} />
+                                <span className="truncate">{child.title}</span>
+                              </Link>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {isAdmin && (
             <>
-              <div className="border-t border-gray-100 my-3" />
+              <div className="border-t border-gray-100 my-3 relative z-10" />
               {adminItems.map(({ to, label, icon: Icon }) => (
-                <div key={to} className={`relative ${isCollapsed ? 'group' : ''}`}>
-                  <Link to={to} className={linkClass(to)} onClick={onClose}>
-                    <Icon className="w-5 h-5 shrink-0" />
+                <div key={to} className={`relative ${isCollapsed ? 'group' : ''}`} ref={(el) => (navRefs.current[to] = el)}>
+                  <Link to={to} className={`relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-300 ${isActive(to) ? 'bg-blue-50/50 text-blue-700' : 'text-gray-600 hover:text-gray-900'} ${isCollapsed ? 'justify-center' : ''}`} onClick={onClose}>
+                    <Icon className={cn("w-5 h-5 shrink-0 transition-colors duration-200", isActive(to) ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
                     <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{label}</span>
                   </Link>
                   {isCollapsed && (
                     <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
-                      <Icon className={`w-6 h-6 shrink-0 transition-transform duration-100 ${isActive(to) ? 'text-blue-700' : 'text-gray-700'}`} />
+                      <Icon className={cn("w-6 h-6 shrink-0", isActive(to) ? "text-blue-600" : "text-slate-400")} />
                       <span className={`text-sm font-semibold ${isActive(to) ? 'text-blue-700' : 'text-gray-800'}`}>{label}</span>
                     </div>
                   )}
@@ -117,20 +258,13 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
           )}
         </nav>
 
-        {/* Toggle Button (Desktop only) */}
+        {/* Toggle Button */}
         <div className={`hidden lg:flex p-2 border-t border-gray-100 relative ${isCollapsed ? 'group' : ''}`}>
           <button
             onClick={onToggleCollapse}
             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all duration-300 ${isCollapsed ? 'justify-center' : ''}`}
           >
-            {isCollapsed ? (
-              <PanelLeftOpen className="w-5 h-5 shrink-0" />
-            ) : (
-              <>
-                <PanelLeftClose className="w-5 h-5 shrink-0" />
-                <span className="truncate">Tutup Sidebar</span>
-              </>
-            )}
+            {isCollapsed ? <PanelLeftOpen className="w-5 h-5 shrink-0" /> : <><PanelLeftClose className="w-5 h-5 shrink-0" /><span className="truncate">Tutup Sidebar</span></>}
           </button>
           {isCollapsed && (
             <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
@@ -152,10 +286,7 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
             </div>
           </div>
           <div className={`relative ${isCollapsed ? 'group' : ''}`}>
-            <button
-              onClick={handleLogout}
-              className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition ${isCollapsed ? 'justify-center' : ''}`}
-            >
+            <button onClick={handleLogout} className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition ${isCollapsed ? 'justify-center' : ''}`}>
               <LogOut className="w-4 h-4 shrink-0" />
               <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>Keluar</span>
             </button>

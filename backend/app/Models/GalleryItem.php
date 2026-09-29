@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Support\Facades\Storage;
+
 class GalleryItem extends Model
 {
     protected $fillable = [
@@ -16,11 +18,18 @@ class GalleryItem extends Model
         'visibility',
     ];
 
-    protected $appends = ['file_url'];
+    protected $appends = ['file_url', 'thumb_url'];
 
     public function getFileUrlAttribute(): ?string
     {
-        return $this->file_path ? asset('storage/' . $this->file_path) : null;
+        return $this->file_path ? Storage::url($this->file_path) : null;
+    }
+
+    public function getThumbUrlAttribute(): ?string
+    {
+        if (!$this->file_path) return null;
+        $thumbPath = preg_replace('/(\.[^.]+)$/', '_thumb.webp', $this->file_path);
+        return Storage::exists($thumbPath) ? Storage::url($thumbPath) : $this->file_url;
     }
 
     public function user()

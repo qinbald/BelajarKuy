@@ -16,6 +16,13 @@ class Subject extends Model
         'teacher',
         'description',
         'color',
+        'conquest_progress',
+        'target_grade',
+        'category_weights',
+    ];
+
+    protected $casts = [
+        'category_weights' => 'array',
     ];
 
     public function user()

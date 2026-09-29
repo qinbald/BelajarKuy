@@ -7,6 +7,9 @@ export const getRecommendations = () => client.get('/gallery/recommendations');
 export const getExternalGallery = (query = 'study aesthetic', source = 'all') => 
   client.get(`/gallery/external?query=${encodeURIComponent(query)}&source=${source}`);
 
+export const searchGalleryAggregator = (q = 'study', source = 'unsplash') =>
+  client.get(`/gallery/search?q=${encodeURIComponent(q)}&source=${source}`);
+
 export const getTags = () => client.get('/gallery/tags');
 
 export const uploadGalleryItem = (formData) => 

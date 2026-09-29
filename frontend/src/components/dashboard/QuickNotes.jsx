@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   StickyNote,
@@ -63,6 +63,7 @@ export default function QuickNotes() {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [newColor, setNewColor] = useState('amber');
+  const [selectedNote, setSelectedNote] = useState(null);
 
   const handleAddNote = (e) => {
     e.preventDefault();
@@ -84,7 +85,16 @@ export default function QuickNotes() {
 
   const handleDelete = (id) => {
     setNotes(notes.filter((n) => n.id !== id));
+    if (selectedNote?.id === id) setSelectedNote(null);
   };
+
+  // ponytail: ESC close only; add focus-trap when a11y needed
+  useEffect(() => {
+    if (!selectedNote) return;
+    const onKey = (e) => e.key === 'Escape' && setSelectedNote(null);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedNote]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -180,7 +190,7 @@ export default function QuickNotes() {
         </form>
       )}
 
-      {/* Daftar Catatan (Grid Sticky Card) */}
+      {/* Daftar Catatan — judul saja, klik buka modal */}
       {notes.length === 0 ? (
         <div className="text-center py-8 text-gray-400 border border-dashed border-gray-200 rounded-2xl">
           <StickyNote className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -191,37 +201,56 @@ export default function QuickNotes() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {notes.map((note) => {
             const theme = COLOR_MAP[note.color] || COLOR_MAP.amber;
-
             return (
-              <div
+              <button
                 key={note.id}
-                className={`p-4 rounded-2xl border ${theme.card} flex flex-col justify-between shadow-xs hover:shadow-sm transition-all relative group`}
+                onClick={() => setSelectedNote(note)}
+                className={`text-left p-4 rounded-2xl border ${theme.card} flex flex-col justify-between shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all relative group cursor-pointer`}
               >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <h3 className="text-xs font-bold truncate">{note.title}</h3>
-                    <button
-                      onClick={() => handleDelete(note.id)}
-                      title="Hapus catatan"
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-700 line-clamp-3 leading-relaxed whitespace-pre-wrap">
-                    {note.content}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/5 text-[10px] text-gray-500 font-medium">
-                  <span>{note.date}</span>
-                  <span className={`px-1.5 py-0.5 rounded-md ${theme.badge} font-semibold uppercase text-[9px]`}>
-                    Memo
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-xs font-bold truncate pr-2">{note.title}</h3>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); handleDelete(note.id); }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.stopPropagation(), handleDelete(note.id))}
+                    title="Hapus catatan"
+                    className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-gray-400 hover:text-red-600 transition flex-shrink-0 p-1 -m-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </span>
                 </div>
-              </div>
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-black/5 text-[10px] text-gray-500 font-medium">
+                  <span>{note.date}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md ${theme.badge} font-semibold uppercase text-[9px]`}>Memo</span>
+                </div>
+              </button>
             );
           })}
+        </div>
+      )}
+      {/* Modal detail — ponytail: ganti ke route /notes/:id saat butuh deep-link/share */}
+      {selectedNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedNote(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`relative w-full max-w-lg rounded-2xl border shadow-xl p-5 max-h-[80vh] overflow-auto ${COLOR_MAP[selectedNote.color]?.card || COLOR_MAP.amber.card}`}
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <h3 className="text-sm font-bold leading-tight">{selectedNote.title}</h3>
+              <button onClick={() => setSelectedNote(null)} className="p-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-gray-600 transition flex-shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedNote.content}</p>
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-black/10 text-xs text-gray-500">
+              <span>{selectedNote.date}</span>
+              <button onClick={() => { handleDelete(selectedNote.id); }} className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 font-semibold">
+                <Trash2 className="w-3.5 h-3.5" /> Hapus
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

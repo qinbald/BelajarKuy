@@ -12,6 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
+import PageHeader from '../../components/common/PageHeader';
 
 const PRESETS = [
   { label: '5 m', value: 5 * 60 },
@@ -159,13 +160,10 @@ export default function TimerPage() {
     <div className={`space-y-6 transition-all duration-300 ${isFocusMode ? 'max-w-xl mx-auto py-8' : ''}`}>
       {/* Header */}
       {!isFocusMode && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Study Timer (Pomodoro)</h1>
-            <p className="text-sm text-gray-500">
-              Fokus penuh, catat waktu riil, dan tingkatkan konsistensi belajar
-            </p>
-          </div>
+        <PageHeader 
+          title="Study Timer (Pomodoro)" 
+          subtitle="Fokus penuh, catat waktu riil, dan tingkatkan konsistensi belajar"
+        >
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
@@ -181,7 +179,7 @@ export default function TimerPage() {
               <Sparkles className="w-4 h-4" /> Mode Fokus
             </button>
           </div>
-        </div>
+        </PageHeader>
       )}
 
       {/* Focus Mode Exit button */}

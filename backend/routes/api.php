@@ -42,6 +42,8 @@ Route::middleware([\App\Http\Middleware\ForceJsonResponse::class])->group(functi
         Route::apiResource('schedules', ScheduleController::class);
 
         // Study Sessions / Timer
+        Route::post('/study-sessions/pomodoro-start', [StudySessionController::class, 'pomodoroStart']);
+        Route::post('/study-sessions/pomodoro-complete', [StudySessionController::class, 'pomodoroComplete'])->middleware('throttle:5,1');
         Route::get('/study-sessions/summary', [StudySessionController::class, 'summary']);
         Route::get('/study-sessions', [StudySessionController::class, 'index']);
         Route::post('/study-sessions', [StudySessionController::class, 'store']);
@@ -67,6 +69,7 @@ Route::middleware([\App\Http\Middleware\ForceJsonResponse::class])->group(functi
 
         // Gallery & Recommendations
         Route::get('/gallery/external', [ExternalGalleryController::class, 'search']);
+        Route::get('/gallery/search', [GalleryController::class, 'search']);
         Route::get('/gallery/recommendations', [GalleryController::class, 'recommendations']);
         Route::get('/gallery/tags', [GalleryController::class, 'tags']);
         Route::get('/gallery', [GalleryController::class, 'index']);

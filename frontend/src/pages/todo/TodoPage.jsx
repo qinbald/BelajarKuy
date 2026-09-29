@@ -20,6 +20,9 @@ const priorityBadges = {
   low: { label: 'Rendah', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
 };
 
+import PageHeader from '../../components/common/PageHeader';
+import GlassLoader from '../../components/common/GlassLoader';
+
 export default function TodoPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -109,11 +112,10 @@ export default function TodoPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Daftar Tugas</h1>
-          <p className="text-sm text-gray-500">Kelola dan selesaikan target belajar Anda</p>
-        </div>
+      <PageHeader 
+        title="Daftar Tugas" 
+        subtitle="Kelola dan selesaikan target belajar Anda"
+      >
         <button
           onClick={openAddModal}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
@@ -121,7 +123,7 @@ export default function TodoPage() {
           <Plus className="w-4 h-4" />
           Tambah Tugas
         </button>
-      </div>
+      </PageHeader>
 
       {/* Filters Bar */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -187,7 +189,7 @@ export default function TodoPage() {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <GlassLoader />
         </div>
       ) : tasks.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">

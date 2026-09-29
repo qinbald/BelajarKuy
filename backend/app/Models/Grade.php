@@ -11,6 +11,7 @@ class Grade extends Model
         'subject_id',
         'title',
         'type',
+        'category',
         'score',
         'max_score',
         'date',

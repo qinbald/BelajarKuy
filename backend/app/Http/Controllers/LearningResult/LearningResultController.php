@@ -52,7 +52,7 @@ class LearningResultController extends Controller
 
         $file = $request->file('file');
         $randomName = Str::random(40) . '.' . $file->extension();
-        $path = $file->storeAs('learning_results/' . $request->user()->id, $randomName, 'public');
+        $path = $file->storeAs('learning_results/' . $request->user()->id, $randomName);
 
         $result = $request->user()->learningResults()->create([
             'title' => $validated['title'],
@@ -119,8 +119,8 @@ class LearningResultController extends Controller
         $result = $request->user()->learningResults()->findOrFail($id);
 
         // Delete file from storage
-        if ($result->file_path && Storage::disk('public')->exists($result->file_path)) {
-            Storage::disk('public')->delete($result->file_path);
+        if ($result->file_path && Storage::exists($result->file_path)) {
+            Storage::delete($result->file_path);
         }
 
         $result->delete();

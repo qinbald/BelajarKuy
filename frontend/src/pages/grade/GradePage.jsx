@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { mutate } from 'swr';
 import { useGrades } from '../../hooks/useGrades';
 import { useSubjects } from '../../hooks/useSubjects';
 import { Award, Plus, Trash2, Edit2, AlertCircle } from 'lucide-react';
@@ -10,6 +11,9 @@ const GRADE_TYPES = [
   { value: 'project', label: 'Proyek' },
   { value: 'other', label: 'Lainnya' },
 ];
+
+import PageHeader from '../../components/common/PageHeader';
+import GlassLoader from '../../components/common/GlassLoader';
 
 export default function GradePage() {
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -27,6 +31,7 @@ export default function GradePage() {
     title: '',
     subject_id: '',
     type: 'assignment',
+    category: 'Tugas',
     score: '',
     max_score: '100',
     date: new Date().toISOString().split('T')[0],
@@ -40,6 +45,7 @@ export default function GradePage() {
       title: '',
       subject_id: subjects[0]?.id || '',
       type: 'assignment',
+      category: 'Tugas',
       score: '',
       max_score: '100',
       date: new Date().toISOString().split('T')[0],
@@ -54,6 +60,7 @@ export default function GradePage() {
       title: grade.title,
       subject_id: grade.subject_id,
       type: grade.type,
+      category: grade.category || 'Tugas',
       score: grade.score,
       max_score: grade.max_score,
       date: grade.date ? grade.date.substring(0, 10) : '',
@@ -81,6 +88,10 @@ export default function GradePage() {
         await addGrade(payload);
       }
       setIsModalOpen(false);
+      
+      // SWR Mutate untuk sinkronisasi data
+      mutate(key => typeof key === 'string' && key.startsWith('/grades'));
+      mutate('/dashboard/summary');
     } catch (err) {
       setFormError(err.response?.data?.message || 'Gagal menyimpan nilai');
     } finally {
@@ -98,18 +109,17 @@ export default function GradePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Catatan Nilai Akademik</h1>
-          <p className="text-sm text-gray-500">Pantau performa evaluasi tugas, kuis, dan ujian Anda</p>
-        </div>
+      <PageHeader 
+        title="Catatan Nilai Akademik" 
+        subtitle="Pantau performa evaluasi tugas, kuis, dan ujian Anda"
+      >
         <button
           onClick={openAddModal}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
         >
           <Plus className="w-4 h-4" /> Tambah Nilai
         </button>
-      </div>
+      </PageHeader>
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
@@ -184,7 +194,7 @@ export default function GradePage() {
       {/* Grades List */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <GlassLoader />
         </div>
       ) : grades.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
@@ -210,6 +220,7 @@ export default function GradePage() {
                   <th className="px-5 py-3">Tipe</th>
                   <th className="px-5 py-3">Tanggal</th>
                   <th className="px-5 py-3 text-right">Skor</th>
+                  <th className="px-5 py-3">Kategori</th>
                   <th className="px-5 py-3 text-right">Persentase</th>
                   <th className="px-5 py-3 text-center">Aksi</th>
                 </tr>
@@ -243,6 +254,11 @@ export default function GradePage() {
                     </td>
                     <td className="px-5 py-3.5 text-right text-xs font-semibold text-gray-800">
                       {g.score} / {g.max_score}
+                    </td>
+                    <td className="px-5 py-3.5 text-xs font-medium text-gray-600">
+                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-semibold">
+                        {g.category || 'Tugas'}
+                      </span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <span
@@ -344,6 +360,28 @@ export default function GradePage() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Kategori *</label>
+                  <select
+                    required
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    disabled={formLoading || !form.subject_id}
+                  >
+                    <option value="">-- Pilih Kategori --</option>
+                    {(() => {
+                      const selectedSub = subjects.find(s => s.id === Number(form.subject_id));
+                      const categories = selectedSub?.category_weights ? Object.keys(selectedSub.category_weights) : ['Tugas', 'Kuis', 'UTS', 'UAS'];
+                      return categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ));
+                    })()}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal *</label>
                   <input
                     type="date"
@@ -354,9 +392,6 @@ export default function GradePage() {
                     disabled={formLoading}
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Skor Diperoleh *

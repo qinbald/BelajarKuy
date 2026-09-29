@@ -62,10 +62,10 @@ export function ThemeProvider({ children }) {
       const formData = new FormData();
       formData.append('image', file);
       const res = await client.post('/background/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
       });
-      const { background_type, background_url } = res.data.data;
-      persist({ type: background_type, value: background_url });
+      const { background_type, background_value, background_url } = res.data.data;
+      persist({ type: background_type, value: background_url || background_value });
     } finally {
       setSaving(false);
     }

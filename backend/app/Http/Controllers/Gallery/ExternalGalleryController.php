@@ -25,7 +25,7 @@ class ExternalGalleryController extends Controller
             $unsplashKey = config('services.unsplash.access_key');
             if ($unsplashKey) {
                 try {
-                    $response = Http::withHeaders([
+                    $response = Http::withoutVerifying()->withHeaders([
                         'Authorization' => "Client-ID {$unsplashKey}",
                     ])->timeout(5)->get('https://api.unsplash.com/search/photos', [
                         'query' => $query,
@@ -57,7 +57,7 @@ class ExternalGalleryController extends Controller
             $pexelsKey = config('services.pexels.api_key');
             if ($pexelsKey) {
                 try {
-                    $response = Http::withHeaders([
+                    $response = Http::withoutVerifying()->withHeaders([
                         'Authorization' => $pexelsKey,
                     ])->timeout(5)->get('https://api.pexels.com/v1/search', [
                         'query' => $query,

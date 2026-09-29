@@ -13,6 +13,10 @@ const DAYS = [
   'Minggu',
 ];
 
+import PageHeader from '../../components/common/PageHeader';
+import GlassLoader from '../../components/common/GlassLoader';
+import FluidTabs from '../../components/common/FluidTabs';
+
 export default function SchedulePage() {
   const { schedules, loading, error, addSchedule, editSchedule, removeSchedule } = useSchedules();
   const { subjects } = useSubjects();
@@ -92,11 +96,10 @@ export default function SchedulePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Jadwal Belajar & Kuliah</h1>
-          <p className="text-sm text-gray-500">Susun agenda mingguan Anda dengan rapi</p>
-        </div>
+      <PageHeader 
+        title="Jadwal Belajar & Kuliah" 
+        subtitle="Susun agenda mingguan Anda dengan rapi"
+      >
         <button
           onClick={() => openAddModal(activeDay)}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
@@ -104,7 +107,7 @@ export default function SchedulePage() {
           <Plus className="w-4 h-4" />
           Tambah Jadwal
         </button>
-      </div>
+      </PageHeader>
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
@@ -114,39 +117,29 @@ export default function SchedulePage() {
       )}
 
       {/* Day Selector Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-gray-200">
-        {DAYS.map((day, idx) => {
+      <FluidTabs
+        tabs={DAYS}
+        activeTab={activeDay}
+        onChange={setActiveDay}
+        renderBadge={(day, idx, isActive) => {
           const count = schedules.filter((s) => s.day === idx).length;
-          const isActive = activeDay === idx;
+          if (count === 0) return null;
           return (
-            <button
-              key={day}
-              onClick={() => setActiveDay(idx)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition flex items-center gap-2 ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded-full transition-colors duration-300 ${
+                isActive ? 'bg-blue-700 text-white' : 'bg-white/80 text-slate-800 shadow-sm'
               }`}
             >
-              <span>{day}</span>
-              {count > 0 && (
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
+              {count}
+            </span>
           );
-        })}
-      </div>
+        }}
+      />
 
       {/* Schedule Items for Active Day */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <GlassLoader />
         </div>
       ) : filteredSchedules.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">

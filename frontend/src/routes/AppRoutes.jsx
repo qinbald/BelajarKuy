@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '../contexts/AuthContext';
+import { TimerProvider } from '../contexts/TimerContext';
 import { ProtectedRoute, GuestRoute, AdminRoute } from './Guards';
 import MainLayout from '../layouts/MainLayout';
 
@@ -9,7 +10,7 @@ import DashboardPage from '../pages/dashboard/DashboardPage';
 import TodoPage from '../pages/todo/TodoPage';
 import SubjectPage from '../pages/subject/SubjectPage';
 import SchedulePage from '../pages/schedule/SchedulePage';
-import TimerPage from '../pages/timer/TimerPage';
+import StudyRoomPage from '../pages/StudyRoomPage';
 import GradePage from '../pages/grade/GradePage';
 import LearningResultPage from '../pages/learning-result/LearningResultPage';
 import GalleryPage from '../pages/gallery/GalleryPage';
@@ -22,34 +23,36 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Public / Guest Routes */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+        <TimerProvider>
+          <Routes>
+            {/* Public / Guest Routes */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+            <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
 
-          {/* Protected User Routes */}
-          <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/todos" element={<TodoPage />} />
-            <Route path="/subjects" element={<SubjectPage />} />
-            <Route path="/schedule" element={<SchedulePage />} />
-            <Route path="/timer" element={<TimerPage />} />
-            <Route path="/grades" element={<GradePage />} />
-            <Route path="/results" element={<LearningResultPage />} />
-            <Route path="/gallery" element={<GalleryPage />} />
-            <Route path="/notes" element={<NotesPage />} />
-          </Route>
+            {/* Protected User Routes */}
+            <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/todos" element={<TodoPage />} />
+              <Route path="/subjects" element={<SubjectPage />} />
+              <Route path="/schedule" element={<SchedulePage />} />
+              <Route path="/study-room" element={<StudyRoomPage />} />
+              <Route path="/grades" element={<GradePage />} />
+              <Route path="/results" element={<LearningResultPage />} />
+              <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/notes" element={<NotesPage />} />
+            </Route>
 
-          {/* Admin Routes */}
-          <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/admin/reports" element={<AdminReportsPage />} />
-          </Route>
-          
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            {/* Admin Routes */}
+            <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/reports" element={<AdminReportsPage />} />
+            </Route>
+            
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </TimerProvider>
       </AuthProvider>
     </BrowserRouter>
   );

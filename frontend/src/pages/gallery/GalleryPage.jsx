@@ -1,8 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useGallery } from '../../hooks/useGallery';
-import { getExternalGallery } from '../../services/galleryService';
+import { searchGalleryAggregator } from '../../services/galleryService';
 import { Image as ImageIcon, UploadCloud, Trash2, Sparkles, Tag, Eye, Lock, Globe, AlertTriangle, Compass, Search, ExternalLink } from 'lucide-react';
 import client from '../../api/client';
+
+import PageHeader from '../../components/common/PageHeader';
+import GlassLoader from '../../components/common/GlassLoader';
+import GlassSkeleton from '../../components/common/GlassSkeleton';
+import FluidTabs from '../../components/common/FluidTabs';
+
+const SOURCE_CONFIG = {
+  unsplash: {
+    placeholder: 'Cari inspirasi (contoh: aesthetic desk, study notes)...',
+    categories: ['Study Space', 'Lo-Fi', 'Minimalist', 'Nature', 'Coffee Shop', 'Architecture', 'Abstract']
+  },
+  history: {
+    placeholder: 'Cari tokoh/peristiwa (contoh: Soekarno, Majapahit)...',
+    categories: ['Soekarno', 'Majapahit', 'Einstein', 'World War', 'Renaissance', 'Pyramid']
+  },
+  anime: {
+    placeholder: 'Cari karakter anime (contoh: Naruto, Levi)...',
+    categories: ['Naruto', 'Levi', 'Gojo', 'Luffy', 'Zoro', 'Mikasa']
+  },
+  movies: {
+    placeholder: 'Cari aktor/aktris (contoh: Tom Cruise, Zendaya)...',
+    categories: ['Tom Cruise', 'Zendaya', 'Keanu Reeves', 'Emma Stone', 'Brad Pitt']
+  }
+};
 
 export default function GalleryPage() {
   const [activeTab, setActiveTab] = useState('inspiration'); // 'personal', 'inspiration', or 'external'
@@ -12,24 +36,37 @@ export default function GalleryPage() {
   const [externalItems, setExternalItems] = useState([]);
   const [externalLoading, setExternalLoading] = useState(false);
   const [externalError, setExternalError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('study desk aesthetic');
-  const [searchSource, setSearchSource] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSource, setSearchSource] = useState('unsplash');
+  const [activeCategory, setActiveCategory] = useState(null);
 
   const fetchExternal = async (q = searchQuery, src = searchSource) => {
     setExternalLoading(true);
     setExternalError(null);
     try {
-      const res = await getExternalGallery(q, src);
+      const res = await searchGalleryAggregator(q, src);
       setExternalItems(res.data.data || []);
     } catch (err) {
-      setExternalError(err.response?.data?.message || 'Gagal memuat gambar dari Unsplash / Pexels');
+      setExternalError(err.response?.data?.message || 'Gagal memuat gambar dari sumber eksternal');
     } finally {
       setExternalLoading(false);
     }
   };
 
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category);
+    setSearchQuery(category);
+    fetchExternal(category, searchSource);
+  };
+
   useEffect(() => {
-    if (activeTab === 'external' && externalItems.length === 0) {
+    setSearchQuery('');
+    setActiveCategory(null);
+    setExternalItems([]);
+  }, [searchSource]);
+
+  useEffect(() => {
+    if (activeTab === 'external' && externalItems.length === 0 && searchQuery) {
       fetchExternal();
     }
   }, [activeTab]);
@@ -139,54 +176,28 @@ export default function GalleryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Galeri Inspirasi</h1>
-          <p className="text-sm text-gray-500">
-            Temukan inspirasi ruang belajar dan simpan koleksi visual Anda
-          </p>
-        </div>
+      <PageHeader 
+        title="Galeri Inspirasi" 
+        subtitle="Temukan inspirasi ruang belajar dan simpan koleksi visual Anda"
+      >
         <button
           onClick={openAddModal}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition shadow-sm"
         >
           <UploadCloud className="w-4 h-4" /> Unggah Gambar
         </button>
-      </div>
+      </PageHeader>
 
       {/* Tabs */}
-      <div className="flex items-center gap-4 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('inspiration')}
-          className={`pb-3 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
-            activeTab === 'inspiration'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          <Sparkles className="w-4 h-4" /> Rekomendasi Untukmu
-        </button>
-        <button
-          onClick={() => setActiveTab('personal')}
-          className={`pb-3 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
-            activeTab === 'personal'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          <ImageIcon className="w-4 h-4" /> Koleksi Pribadi
-        </button>
-        <button
-          onClick={() => setActiveTab('external')}
-          className={`pb-3 text-sm font-medium border-b-2 transition flex items-center gap-2 ${
-            activeTab === 'external'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          <Compass className="w-4 h-4" /> Unsplash & Pexels
-        </button>
-      </div>
+      <FluidTabs
+        tabs={[
+          { id: 'inspiration', label: 'Rekomendasi Untukmu', icon: Sparkles },
+          { id: 'personal', label: 'Koleksi Pribadi', icon: ImageIcon },
+          { id: 'external', label: 'Sumber Eksternal', icon: Compass }
+        ]}
+        activeTab={['inspiration', 'personal', 'external'].indexOf(activeTab)}
+        onChange={(idx) => setActiveTab(['inspiration', 'personal', 'external'][idx])}
+      />
 
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
@@ -196,10 +207,10 @@ export default function GalleryPage() {
 
       {/* User Tags Info (Inspiration Tab) */}
       {activeTab === 'inspiration' && userTags && userTags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-          <span className="font-medium">Rekomendasi berdasarkan minat Anda:</span>
+        <div className="flex flex-wrap items-center gap-2 text-xs p-3 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl shadow-sm">
+          <span className="font-semibold text-slate-800 dark:text-slate-200">Rekomendasi berdasarkan minat Anda:</span>
           {userTags.map((t) => (
-            <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+            <span key={t} className="px-2.5 py-1 bg-blue-600/10 text-blue-700 dark:text-blue-400 rounded-full border border-blue-600/20 font-medium">
               #{t}
             </span>
           ))}
@@ -208,41 +219,63 @@ export default function GalleryPage() {
 
       {/* External Search Bar */}
       {activeTab === 'external' && (
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && fetchExternal()}
-              placeholder="Cari inspirasi (contoh: aesthetic desk, study notes)..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
+        <div className="space-y-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 p-3 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-white/50 dark:border-white/10 rounded-xl shadow-sm">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setActiveCategory(null); }}
+                onKeyDown={(e) => e.key === 'Enter' && fetchExternal()}
+                placeholder={SOURCE_CONFIG[searchSource]?.placeholder || 'Cari inspirasi...'}
+                className="w-full pl-9 pr-4 py-2 text-sm bg-white/80 dark:bg-slate-800/80 border border-white/40 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 shadow-sm"
+              />
+            </div>
+            <select
+              value={searchSource}
+              onChange={(e) => setSearchSource(e.target.value)}
+              className="px-3 py-2 text-sm bg-white/80 dark:bg-slate-800/80 border border-white/40 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white shadow-sm"
+            >
+              <option value="unsplash">Unsplash (Umum)</option>
+              <option value="history">Wikimedia (Sejarah)</option>
+              <option value="anime">Jikan (Anime)</option>
+              <option value="movies">TMDB (Film/Aktor)</option>
+            </select>
+            <button
+              onClick={() => fetchExternal()}
+              className="px-5 py-2 bg-slate-900 dark:bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition shadow-sm"
+            >
+              Cari
+            </button>
           </div>
-          <select
-            value={searchSource}
-            onChange={(e) => setSearchSource(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="all">Semua Sumber</option>
-            <option value="unsplash">Unsplash</option>
-            <option value="pexels">Pexels</option>
-          </select>
-          <button
-            onClick={() => fetchExternal()}
-            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition"
-          >
-            Cari
-          </button>
+
+          {/* Quick Filter Chips */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {(SOURCE_CONFIG[searchSource]?.categories || []).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryClick(cat)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap cursor-pointer transition-colors shrink-0 ${
+                  activeCategory === cat
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-white/40 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300 dark:hover:border-blue-500'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Gallery Grid (Masonry-like using CSS columns) */}
       {activeTab === 'external' ? (
         externalLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            {[...Array(6)].map((_, i) => (
+              <GlassSkeleton key={i} className="w-full h-48 break-inside-avoid" />
+            ))}
           </div>
         ) : externalError ? (
           <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
@@ -278,8 +311,10 @@ export default function GalleryPage() {
           </div>
         )
       ) : loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+          {[...Array(6)].map((_, i) => (
+            <GlassSkeleton key={i} className="w-full h-48 break-inside-avoid" />
+          ))}
         </div>
       ) : items.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
@@ -301,7 +336,7 @@ export default function GalleryPage() {
               {/* Image */}
               <div className="relative bg-gray-100">
                 <img
-                  src={item.file_url}
+                  src={item.thumb_url || item.file_url}
                   alt={item.title}
                   className="w-full h-auto object-cover"
                   loading="lazy"
@@ -478,10 +513,7 @@ export default function GalleryPage() {
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition disabled:opacity-50"
                 >
                   {uploading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Mengunggah...</span>
-                    </>
+                    <GlassLoader small text="Mengunggah..." />
                   ) : (
                     'Unggah Sekarang'
                   )}

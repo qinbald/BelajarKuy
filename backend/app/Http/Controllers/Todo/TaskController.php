@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Todo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Task;
+use App\Services\TacticalGamificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -100,21 +101,31 @@ class TaskController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, $id)
+    public function toggleComplete(Request $request, $id, TacticalGamificationService $gamification)
     {
-        $task = $request->user()->tasks()->with('subject')->find($id);
+        $task = $request->user()->tasks()->find($id);
 
         if (!$task) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tugas tidak ditemukan',
-                'errors' => null
+                'message' => 'Tugas tidak ditemukan'
             ], 404);
+        }
+
+        $task->status = $task->status === 'completed' ? 'pending' : 'completed';
+        $task->completed_at = $task->status === 'completed' ? now() : null;
+        $task->save();
+
+        if ($task->status === 'completed') {
+            $gamification->awardExp($request->user(), 50);
+            if ($task->subject_id) {
+                $gamification->advanceConquest($task->subject, 1);
+            }
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Detail tugas berhasil diambil',
+            'message' => 'Status tugas berhasil diubah',
             'data' => $task
         ]);
     }
@@ -193,35 +204,6 @@ class TaskController extends Controller
             'success' => true,
             'message' => 'Tugas berhasil dihapus',
             'data' => null
-        ]);
-    }
-
-    public function toggleComplete(Request $request, $id)
-    {
-        $task = $request->user()->tasks()->find($id);
-
-        if (!$task) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tugas tidak ditemukan',
-                'errors' => null
-            ], 404);
-        }
-
-        if ($task->status === 'completed') {
-            $task->status = 'pending';
-            $task->completed_at = null;
-        } else {
-            $task->status = 'completed';
-            $task->completed_at = now();
-        }
-
-        $task->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => $task->status === 'completed' ? 'Tugas diselesaikan' : 'Tugas dibuka kembali',
-            'data' => $task->load('subject')
         ]);
     }
 }

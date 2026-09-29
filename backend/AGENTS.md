@@ -45,3 +45,8 @@ php artisan boost:install
 
 Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
 </laravel-boost-guidelines>
+
+Please follow the rules defined in the antislop.md file located at the root of this workspace.
+
+# Anti-Slop Rules
+See /antislop.md for full rules.

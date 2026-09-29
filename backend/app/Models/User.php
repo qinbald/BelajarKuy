@@ -18,6 +18,9 @@ class User extends Authenticatable
         'role',
         'avatar',
         'is_active',
+        'exp',
+        'tactical_rank',
+        'default_passing_grade',
     ];
 
     protected $attributes = [
