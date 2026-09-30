@@ -8,37 +8,9 @@
 
 ## 📖 Project Description
 
-ROLE:
-Anda bertindak sebagai Senior Full-Stack Developer dan System Architect.
+BelajarKuy adalah Personal Learning Management System (LMS) komprehensif yang dirancang untuk membantu pelajar merencanakan, memantau, dan menganalisis progres akademik mereka. 
 
-KONTEKS MASALAH:
-Pada LMS BelajarKuy, kalkulasi "Zona Kritis" sebelumnya menggunakan rata-rata biasa. Ini keliru karena sistem penilaian universitas menggunakan "Bobot Persentase" (Weighted Average). 
-Sebuah nilai kuis berbobot 5% tidak bisa dirata-ratakan sejajar dengan nilai UTS berbobot 35%. Saya perlu mengubah sistem agar mengakomodasi input bobot pada setiap sub-nilai.
-
-TUGAS ANDA:
-Perbarui arsitektur Database, Backend (Laravel), dan Frontend (React) dengan instruksi MUTLAK berikut:
-
-1. PENYESUAIAN DATABASE (`grades` table):
-   - Tambahkan kolom `weight_percentage` (integer/decimal, maksimal 100) pada tabel `grades` (tabel yang menyimpan input nilai per tugas/ujian).
-
-2. LOGIKA RATA-RATA TERBOBOT (`GradeAnalyzerService.php`):
-   - Ubah logika penghitungan nilai. Jangan gunakan `avg()`.
-   - Gunakan rumus Rata-rata Terbobot: 
-     `Total Nilai = Sum(grade_value * (weight_percentage / 100))`
-   - CATATAN PENTING: Karena perkuliahan berjalan bertahap, total bobot nilai yang sudah diinput mahasiswa mungkin belum mencapai 100% (misal baru ada nilai Tugas 20% dan UTS 30%, total bobot 50%). 
-   - Buat algoritma perhitungan "Current Weighted Score" yang adil: 
-     `(Total Nilai Sementara / Total Bobot Sementara) * 100` agar mahasiswa tahu "Nilai murni saya sejauh ini adalah X".
-   - Bandingkan hasil akhir ini dengan `target_grade` atau `default_passing_grade` untuk menentukan apakah masuk "Zona Kritis".
-
-3. FRONTEND UI - FORM INPUT NILAI (React):
-   - Perbarui komponen `GradeForm.jsx` (atau form tempat memasukkan nilai).
-   - Pastikan sekarang ada 3 input utama: "Nama Evaluasi" (misal: UTS), "Nilai" (0-100), dan "Bobot (%)" (0-100).
-   - Tampilkan validasi ringan: Beri peringatan kecil (text warna kuning/merah) jika total bobot seluruh nilai pada mata pelajaran tersebut sudah melebihi 100%.
-
-KODE YANG DIHARAPKAN:
-1. Potongan Migration untuk menambah kolom `weight_percentage`.
-2. Full code logika kalkulasi matematika di `GradeAnalyzerService.php` yang menangani `weight_percentage` dan bobot parsial (belum 100%).
-3. Cuplikan UI `GradeForm.jsx` yang mencakup input bobot.
+Sistem ini memiliki fitur unggulan berupa analisis nilai berbobot (Weighted Average) untuk mengkalkulasi "Zona Kritis" akademik secara akurat berdasarkan bobot persentase setiap tugas dan ujian, memungkinkan pelajar mengetahui performa murni mereka secara real-time.
 
 ## ✨ Key Features
 
@@ -187,7 +159,7 @@ _Semua endpoint yang dilindungi memerlukan header `Authorization: Bearer <token>
 Proses _seeding_ database (`php artisan db:seed`) secara otomatis membuat akun bawaan yang dapat digunakan untuk pengujian:
 
 **1. Administrator Account**
-terapkan 
+
 - **Email:** `admin@belajarkuy.test`
 - **Password:** `Admin123!`
 

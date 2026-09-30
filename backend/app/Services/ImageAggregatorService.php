@@ -16,15 +16,26 @@ class ImageAggregatorService
         $cacheKey = "gallery_{$source}_" . Str::slug($query);
         $cacheTtl = now()->addHours(24);
 
-        return Cache::remember($cacheKey, $cacheTtl, function () use ($query, $source) {
-            return match ($source) {
-                'unsplash' => $this->fetchUnsplash($query),
-                'history'  => $this->fetchWikimedia($query),
-                'anime'    => $this->fetchJikan($query),
-                'movies'   => $this->fetchTmdb($query),
-                default    => [],
-            };
-        });
+        if (Cache::has($cacheKey)) {
+            $cachedData = Cache::get($cacheKey);
+            if (!empty($cachedData)) {
+                return $cachedData;
+            }
+        }
+
+        $data = match ($source) {
+            'unsplash' => $this->fetchUnsplash($query),
+            'history'  => $this->fetchWikimedia($query),
+            'anime'    => $this->fetchJikan($query),
+            'movies'   => $this->fetchTmdb($query),
+            default    => [],
+        };
+
+        if (!empty($data)) {
+            Cache::put($cacheKey, $data, $cacheTtl);
+        }
+
+        return $data;
     }
 
     private function fetchUnsplash(string $query): array

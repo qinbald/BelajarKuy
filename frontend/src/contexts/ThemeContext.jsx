@@ -87,7 +87,7 @@ export function ThemeProvider({ children }) {
     if (background.type === 'color') return { backgroundColor: background.value };
     if (background.type === 'preset_image' || background.type === 'custom_image') {
       return {
-        backgroundImage: `url(${background.value})`,
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${background.value})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
