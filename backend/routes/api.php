@@ -22,11 +22,17 @@ Route::middleware([\App\Http\Middleware\ForceJsonResponse::class])->group(functi
     // Public routes
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/email/verify/{id}/{hash}', [\App\Http\Controllers\Auth\VerificationController::class, 'verify']);
 
     // Protected routes
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
+        Route::post('/email/verification-notification', [\App\Http\Controllers\Auth\VerificationController::class, 'resend'])->middleware('throttle:6,1');
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+
+        // Profile Settings
+        Route::put('/profile', [\App\Http\Controllers\Profile\ProfileController::class, 'update']);
+        Route::post('/profile/avatar', [\App\Http\Controllers\Profile\ProfileController::class, 'uploadAvatar']);
 
         // Dashboard Summary (BFF Aggregate Endpoint)
         Route::get('/dashboard/summary', [DashboardSummaryController::class, 'index']);

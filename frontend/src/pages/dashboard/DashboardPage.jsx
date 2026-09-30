@@ -7,6 +7,7 @@ import { toggleTaskComplete } from '../../services/todoService';
 import VisionBoard from '../../components/dashboard/VisionBoard';
 
 import BackgroundSettingsModal from '../../components/dashboard/BackgroundSettingsModal';
+import ProfileSettingsModal from '../../components/dashboard/ProfileSettingsModal';
 import TacticalCommandCenter from '../../components/dashboard/TacticalCommandCenter';
 import StatCard from '../../components/dashboard/StatCard';
 import GlassSkeleton from '../../components/common/GlassSkeleton';
@@ -24,10 +25,12 @@ import {
   AlertCircle,
   Palette,
   StickyNote,
+  User,
   BarChart3,
   Upload,
   Trash2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  GraduationCap
 } from 'lucide-react';
 import {
   BarChart,
@@ -45,6 +48,7 @@ export default function DashboardPage() {
   const { background, hasImage } = useTheme();
   const [tasks, setTasks] = useState([]);
   const [isBgModalOpen, setIsBgModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('chart'); // 'chart' | 'vision'
 
   // ponytail: localStorage only, ceiling single-device; upgrade to POST /api/target-visual when need cross-device sync
@@ -106,9 +110,30 @@ export default function DashboardPage() {
         <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
           <Sparkles className="w-32 h-32 -mt-8 -mr-8" />
         </div>
-        <div className="relative z-10">
-          <h1 className="text-xl sm:text-2xl font-bold">Halo, {user?.name || 'Pelajar'}! ??</h1>
-          <p className="text-blue-100 text-xs sm:text-sm mt-1">Siap untuk mencapai target belajar hari ini?</p>
+        <div className="relative z-10 flex items-center gap-4">
+          <button 
+            onClick={() => setIsProfileModalOpen(true)}
+            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white/30 flex items-center justify-center bg-white/20 overflow-hidden shrink-0 hover:border-white hover:scale-105 transition-all cursor-pointer shadow-sm group relative"
+            title="Pengaturan Profil"
+          >
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-7 h-7 sm:w-8 sm:h-8 text-blue-100 group-hover:text-white transition-colors" />
+            )}
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Halo, {user?.name || 'Pelajar'}! 👋</h1>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {user?.institution && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg text-xs font-semibold text-white shadow-sm">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  {user.institution}
+                </span>
+              )}
+              <p className="text-blue-100 text-xs sm:text-sm">Siap untuk mencapai target belajar hari ini?</p>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2 relative z-10 flex-wrap">
           {/* Quick Notes Link */}
@@ -427,6 +452,7 @@ export default function DashboardPage() {
 
       {/* THEME MODAL */}
       <BackgroundSettingsModal isOpen={isBgModalOpen} onClose={() => setIsBgModalOpen(false)} />
+      <ProfileSettingsModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
     </div>
   );
 }

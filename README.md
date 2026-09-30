@@ -20,7 +20,8 @@ Sistem ini memiliki fitur unggulan berupa analisis nilai berbobot (Weighted Aver
 - 📊 **Analytics Dashboard**: Pantau _streak_ belajar, durasi belajar, dan distribusi nilai secara visual.
 - 🖼️ **Learning Results Gallery**: Unggah, bagikan, dan temukan inspirasi catatan/artefak belajar (dukungan external & rekomendasi tag).
 - 🎨 **Dashboard Background Customization**: Personalisasi tampilan dashboard dengan 7 pilihan warna, preset Unsplash pilihan, atau unggah gambar sendiri dengan kompresi WebP otomatis.
-- 🪟 **Glassmorphism Collapsible Sidebar**: Navigasi modern dengan sidebar yang bisa diciutkan, dilengkapi efek hover pop-out glassmorphism dan accessible navigation.
+- 🪟 **Glassmorphism Collapsible Sidebar & Tabbed Profile**: Navigasi modern dengan efek *hover pop-out* serta modal pengaturan profil bersistem Tab (Umum, Keamanan, Preferensi).
+- 🛡️ **Headless Email Verification & Data Isolation**: Alur otorisasi registrasi mutakhir berbasis API, perlindungan kebocoran *state* (*state leakage protection*) saat logout, dan sanitasi SWR Cache.
 - ⚡ **Optimized Data Fetching**: Caching performa tinggi berbasis SWR, pagination, dan query eager-loading untuk memangkas waktu muat halaman.
 - 🛡️ **Role Management & Moderation**: Panel admin untuk memantau metrik platform, mengaktifkan/nonaktifkan akun, serta memoderasi konten yang dilaporkan.
 
@@ -167,12 +168,6 @@ Proses _seeding_ database (`php artisan db:seed`) secara otomatis membuat akun b
 
 - **Email:** `user@belajarkuy.test`
 - **Password:** `User123!`
-
-**3. Custom User Account**
-
-- **Email:** `akunbuatan223@gmail.com`
-- **Name:** `Stevius`
-- **Role:** `user`
 
 ## 🚧 Known Issues & Next Steps
 

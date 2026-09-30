@@ -6,6 +6,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -22,8 +23,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(form.name, form.email, form.password, form.password_confirmation);
-      navigate('/dashboard');
+      const result = await register(form.name, form.email, form.password, form.password_confirmation);
+      if (result && result.message) {
+        setSuccessMessage(result.message);
+      } else {
+        setSuccessMessage('Registrasi berhasil! Silakan cek email Anda.');
+      }
+      setForm({ name: '', email: '', password: '', password_confirmation: '' });
     } catch (err) {
       if (err.response?.data?.errors) {
         setErrors(err.response.data.errors);
@@ -72,20 +78,28 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {field('name', 'Nama Lengkap', 'text', 'Nama Anda')}
-          {field('email', 'Email', 'email', 'nama@email.com')}
-          {field('password', 'Password', 'password', '••••••••')}
-          {field('password_confirmation', 'Konfirmasi Password', 'password', '••••••••')}
+        {successMessage ? (
+          <div className="mb-6 p-4 text-sm text-green-800 bg-green-50 border border-green-200 rounded-xl text-center shadow-inner">
+            <h3 className="font-bold text-lg mb-2 text-green-700">Pendaftaran Berhasil! 🎉</h3>
+            <p>{successMessage}</p>
+            <p className="mt-3 text-xs text-green-600">Anda dapat menutup halaman ini setelah memverifikasi email Anda.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {field('name', 'Nama Lengkap', 'text', 'Nama Anda')}
+            {field('email', 'Email', 'email', 'nama@email.com')}
+            {field('password', 'Password', 'password', '••••••••')}
+            {field('password_confirmation', 'Konfirmasi Password', 'password', '••••••••')}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Memproses...' : 'Daftar'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Memproses...' : 'Daftar'}
+            </button>
+          </form>
+        )}
 
         <p className="text-center text-sm text-gray-600 mt-6">
           Sudah punya akun?{' '}

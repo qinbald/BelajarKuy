@@ -6,6 +6,7 @@ import MainLayout from '../layouts/MainLayout';
 
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
+import VerifyEmail from '../pages/auth/VerifyEmail';
 import DashboardPage from '../pages/dashboard/DashboardPage';
 import TodoPage from '../pages/todo/TodoPage';
 import SubjectPage from '../pages/subject/SubjectPage';
@@ -29,6 +30,7 @@ export default function AppRoutes() {
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
 
             {/* Protected User Routes */}
             <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>

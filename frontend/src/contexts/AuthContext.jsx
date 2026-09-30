@@ -50,11 +50,13 @@ export const AuthProvider = ({ children }) => {
       password_confirmation,
     });
     if (res.data.success) {
-      const { user, token } = res.data.data;
-      setUser(user);
-      setToken(token);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      if (res.data.data) {
+        const { user, token } = res.data.data;
+        setUser(user);
+        setToken(token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+      }
       return res.data;
     }
   };
@@ -67,13 +69,17 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setToken(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      
+      // Hapus SELURUH data lokal (termasuk background preferensi dan token user lama)
+      localStorage.clear();
+      
+      // Jika perlu, paksa hapus state aplikasi (opsional: reset session cache via refresh)
+      window.location.href = '/login';
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, setUser, token, loading, login, register, logout, isAdmin: user?.role === 'admin' }}>
       {children}
     </AuthContext.Provider>
   );

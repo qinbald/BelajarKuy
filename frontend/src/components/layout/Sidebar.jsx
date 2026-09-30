@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import ProfileSettingsModal from '../dashboard/ProfileSettingsModal';
 import { cn } from '../../utils/cn';
 import {
   LayoutDashboard,
@@ -66,6 +67,7 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
   const sidebarRef = useRef(null);
   const navRefs = useRef({});
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState(() => {
     const active = navStructure.filter((n) => n.children && isParentActive(pathname, n)).map((n) => n.title);
     return active;
@@ -276,14 +278,40 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
 
         {/* User footer */}
         <div className={`border-t border-gray-100 p-4 transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`}>
-          <div className={`flex items-center gap-3 mb-3 ${isCollapsed ? 'justify-center' : ''}`}>
-            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-              {user?.name?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-            <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>
-              <p className="text-sm font-medium text-gray-800 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-            </div>
+          <div className={`relative ${isCollapsed ? 'group' : ''}`}>
+            <button 
+              onClick={() => setIsProfileModalOpen(true)}
+              className={`flex items-center gap-3 w-full mb-3 px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left ${isCollapsed ? 'justify-center' : ''}`}
+            >
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0 overflow-hidden border border-gray-200">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  user?.name?.charAt(0)?.toUpperCase() || '?'
+                )}
+              </div>
+              <div className={`flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>
+                <p className="text-sm font-medium text-gray-800 truncate">{user?.name}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              </div>
+            </button>
+            
+            {/* Tooltip Pengaturan Profil saat Collapsed */}
+            {isCollapsed && (
+              <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0 overflow-hidden border border-blue-200">
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    user?.name?.charAt(0)?.toUpperCase() || '?'
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-800">Pengaturan Profil</span>
+                  <span className="text-xs text-gray-500">{user?.name}</span>
+                </div>
+              </div>
+            )}
           </div>
           <div className={`relative ${isCollapsed ? 'group' : ''}`}>
             <button onClick={handleLogout} className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition ${isCollapsed ? 'justify-center' : ''}`}>
@@ -299,6 +327,9 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
           </div>
         </div>
       </aside>
+
+      {/* MODAL PROFIL DARI SIDEBAR */}
+      <ProfileSettingsModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
     </>
   );
 }

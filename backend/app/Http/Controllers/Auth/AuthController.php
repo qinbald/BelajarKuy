@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -34,16 +35,12 @@ class AuthController extends Controller
             'role' => 'user',
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        event(new Registered($user));
 
         return response()->json([
             'success' => true,
-            'message' => 'Registrasi berhasil',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
+            'message' => 'Registrasi berhasil. Silakan cek email Anda untuk instruksi verifikasi.',
+            'data' => null
         ], 201);
     }
 
@@ -71,6 +68,14 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->firstOrFail();
+
+        if (!$user->hasVerifiedEmail()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda.',
+                'errors' => ['account' => ['Email belum diverifikasi']]
+            ], 403);
+        }
 
         if (!$user->is_active) {
             return response()->json([
