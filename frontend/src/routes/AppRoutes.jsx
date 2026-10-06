@@ -16,6 +16,7 @@ import GradePage from '../pages/grade/GradePage';
 import LearningResultPage from '../pages/learning-result/LearningResultPage';
 import GalleryPage from '../pages/gallery/GalleryPage';
 import NotesPage from '../pages/notes/NotesPage';
+import AnalyticsDashboard from '../pages/analytics/AnalyticsDashboard';
 import AdminLayout from '../layouts/AdminLayout';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminReportsPage from '../pages/admin/AdminReportsPage';
@@ -43,6 +44,7 @@ export default function AppRoutes() {
               <Route path="/results" element={<LearningResultPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
               <Route path="/notes" element={<NotesPage />} />
+              <Route path="/analytics" element={<AnalyticsDashboard />} />
             </Route>
 
             {/* Admin Routes */}

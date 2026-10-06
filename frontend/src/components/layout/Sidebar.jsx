@@ -22,6 +22,8 @@ import {
   Layers,
   Compass,
   Focus,
+  Moon,
+  Sun,
 } from 'lucide-react';
 
 const navStructure = [
@@ -66,12 +68,44 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
   const navigate = useNavigate();
   const sidebarRef = useRef(null);
   const navRefs = useRef({});
-  const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [openMenus, setOpenMenus] = useState(() => {
     const active = navStructure.filter((n) => n.children && isParentActive(pathname, n)).map((n) => n.title);
     return active;
   });
+
+  const hoverTimeoutRef = useRef(null);
+  const [hoveredMenu, setHoveredMenu] = useState(null);
+
+  const handleMouseEnter = (title) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setHoveredMenu(title);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredMenu(null);
+    }, 250);
+  };
+
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') || 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
   // Auto-expand parent when child becomes active (e.g. on refresh / navigation)
   useEffect(() => {
@@ -95,29 +129,16 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
 
   const isActive = (to) => pathname === to || pathname.startsWith(to + '/');
 
-  // Sliding pill for active child
-  useEffect(() => {
-    const allChildPaths = navStructure.flatMap((n) => (n.children ? n.children : [n]));
-    // also include top-level Beranda
-    const activeChild = allChildPaths.find((c) => isPathActive(pathname, c));
-    const key = activeChild?.path;
-    if (key && navRefs.current[key]) {
-      const el = navRefs.current[key];
-      setIndicatorStyle({ top: el.offsetTop, height: el.offsetHeight, opacity: 1 });
-    } else if (pathname.startsWith('/admin') && navRefs.current['/admin']) {
-      const el = navRefs.current['/admin'];
-      setIndicatorStyle({ top: el.offsetTop, height: el.offsetHeight, opacity: 1 });
-    } else {
-      setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
-    }
-  }, [pathname, openMenus, isCollapsed]);
+  // Sliding pill dihapus sesuai permintaan
 
-  const childLinkClass = (path) =>
-    `relative z-10 flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-      isPathActive(pathname, { path, altPaths: navStructure.flatMap((n) => n.children || []).find((c) => c.path === path)?.altPaths })
-        ? 'bg-blue-50/50 text-blue-700'
-        : 'text-gray-600 hover:text-gray-900'
+  const childLinkClass = (path) => {
+    const active = isPathActive(pathname, { path, altPaths: navStructure.flatMap((n) => n.children || []).find((c) => c.path === path)?.altPaths });
+    return `relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-r-lg text-sm transition-colors duration-200 ${
+      active
+        ? 'bg-blue-500/10 text-blue-400 font-semibold border-l-4 border-blue-500'
+        : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border-l-4 border-transparent'
     } ${isCollapsed ? 'justify-center' : ''}`;
+  };
 
   return (
     <>
@@ -125,28 +146,24 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
 
       <aside
         ref={sidebarRef}
-        className={`fixed top-0 left-0 z-50 h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-r border-gray-200/60 dark:border-slate-800/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex flex-col transition-all duration-300 ease-in-out lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         } ${isCollapsed ? 'w-20 overflow-visible' : 'w-64 overflow-hidden'}`}
       >
+        {/* Double-Click Edge Toggle */}
+        <div 
+          className="absolute top-0 right-0 w-1.5 h-full cursor-ew-resize z-[60] hover:bg-blue-400/40 transition-colors hidden lg:block"
+          onDoubleClick={onToggleCollapse}
+          title="Klik ganda untuk lipat/buka sidebar"
+        />
         {/* Brand */}
-        <div className={`flex items-center gap-2 py-5 border-b border-gray-100 transition-all duration-300 ${isCollapsed ? 'justify-center px-2' : 'px-6'}`}>
-          <BookOpen className="w-7 h-7 text-blue-600 shrink-0" />
-          <span className={`text-xl font-bold text-gray-800 truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>BelajarKuy</span>
+        <div className={`flex items-center gap-2 py-5 border-b border-gray-100 dark:border-slate-800 transition-all duration-300 ${isCollapsed ? 'justify-center px-2' : 'px-6'}`}>
+          <BookOpen className="w-7 h-7 text-blue-600 dark:text-blue-500 shrink-0" />
+          <span className={`text-xl font-bold text-gray-800 dark:text-slate-100 truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>BelajarKuy</span>
         </div>
 
         {/* Nav */}
         <nav className={`relative flex-1 px-3 py-4 space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto overflow-x-hidden'}`}>
-          {/* Sliding Indicator */}
-          <div
-            className="absolute top-0 left-3 right-3 bg-blue-50 rounded-lg transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-0 pointer-events-none"
-            style={{
-              transform: `translate3d(0, ${indicatorStyle.top}px, 0)`,
-              height: `${indicatorStyle.height}px`,
-              opacity: indicatorStyle.opacity,
-            }}
-          />
-
           {navStructure.map((item) => {
             const hasChildren = !!item.children;
             const isOpen = openMenus.includes(item.title);
@@ -156,13 +173,24 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
             if (!hasChildren) {
               // Top-level Beranda
               return (
-                <div key={item.path} className={`relative ${isCollapsed ? 'group' : ''}`} ref={(el) => (navRefs.current[item.path] = el)}>
+                <div 
+                  key={item.path} 
+                  className="relative" 
+                  ref={(el) => (navRefs.current[item.path] = el)}
+                  onMouseEnter={() => isCollapsed && handleMouseEnter(item.title)}
+                  onMouseLeave={() => isCollapsed && handleMouseLeave()}
+                >
                   <Link to={item.path} className={childLinkClass(item.path)} onClick={onClose}>
                     <ParentIcon className={cn("w-5 h-5 shrink-0 transition-colors duration-200", isPathActive(pathname, item) ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
                     <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{item.title}</span>
                   </Link>
                   {isCollapsed && (
-                    <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
+                    <div 
+                      aria-hidden="true" 
+                      className={`absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl scale-95 -translate-x-1 transition-all duration-200 ease-out pointer-events-none z-[60] whitespace-nowrap ${
+                        hoveredMenu === item.title ? 'opacity-100 visible scale-100 translate-x-0' : 'opacity-0 invisible'
+                      }`}
+                    >
                       <ParentIcon className={cn("w-6 h-6 shrink-0", isPathActive(pathname, item) ? "text-blue-600" : "text-slate-400")} />
                       <span className={`text-sm font-semibold ${isPathActive(pathname, item) ? 'text-blue-700' : 'text-gray-800'}`}>{item.title}</span>
                     </div>
@@ -173,65 +201,85 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
 
             // Parent with accordion
             return (
-              <div key={item.title} className={`relative ${isCollapsed ? 'group' : ''}`}>
+              <div 
+                key={item.title} 
+                className="relative"
+                onMouseEnter={() => isCollapsed && handleMouseEnter(item.title)}
+                onMouseLeave={() => isCollapsed && handleMouseLeave()}
+              >
                 <button
                   onClick={() => !isCollapsed && toggleMenu(item.title)}
-                  className={`relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                    parentActive ? 'text-blue-700 font-semibold' : 'text-gray-600 hover:text-gray-900'
+                  className={`relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-r-lg text-sm transition-colors duration-200 ${
+                    parentActive 
+                      ? 'bg-blue-500/10 text-blue-400 font-semibold border-l-4 border-blue-500' 
+                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border-l-4 border-transparent'
                   } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
                 >
                   <span className="flex items-center gap-3">
-                    <ParentIcon className={cn("w-5 h-5 shrink-0 transition-colors duration-200", parentActive ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
+                    <ParentIcon className={`w-5 h-5 shrink-0 transition-colors duration-200 ${parentActive ? 'text-blue-400' : 'text-gray-400 group-hover:text-gray-200'}`} />
                     <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{item.title}</span>
                   </span>
                   {!isCollapsed && (
-                    <ChevronDown className={`w-4 h-4 shrink-0 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
+                    <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
                   )}
                 </button>
 
                 {/* Collapsed: show children as pop-out on hover */}
                 {isCollapsed ? (
-                  <div className="absolute left-full top-0 ml-2 opacity-0 invisible translate-x-[-10px] group-hover:opacity-100 group-hover:visible group-hover:translate-x-0 group-hover:pointer-events-auto transition-all duration-200 ease-out z-50 pointer-events-none before:absolute before:-left-2 before:top-0 before:w-2 before:h-full">
-                    <div className="bg-white/80 backdrop-blur-xl border border-white/40 shadow-xl rounded-xl p-2 min-w-[180px]">
-                      <p className="text-xs font-bold text-gray-500 px-2 py-1 uppercase tracking-wider">{item.title}</p>
-                      {item.children.map((child) => {
-                        const ChildIcon = child.icon;
-                        return (
-                          <Link
-                            key={child.path}
-                            to={child.path}
-                            onClick={onClose}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm group/child ${isPathActive(pathname, child) ? 'bg-blue-50/50 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                          >
-                            <ChildIcon className={cn("w-4 h-4 shrink-0 transition-colors duration-200", isPathActive(pathname, child) ? "text-blue-600" : "text-slate-400 group-hover/child:text-blue-500")} />
-                            {child.title}
-                          </Link>
-                        );
-                      })}
-                    </div>
+                  <div 
+                    className={`absolute left-full top-0 pl-4 py-8 -mt-8 -ml-2 z-50 transition-all duration-200 ease-out ${
+                      hoveredMenu === item.title ? 'opacity-100 visible translate-x-0 pointer-events-auto' : 'opacity-0 invisible translate-x-[-10px] pointer-events-none'
+                    }`}
+                  >
+                    {hoveredMenu === item.title && (
+                      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 shadow-xl rounded-xl p-2 min-w-[180px]">
+                        <p className="text-xs font-bold text-slate-500 px-2 py-1 uppercase tracking-wider">{item.title}</p>
+                        {item.children.map((child) => {
+                          const ChildIcon = child.icon;
+                          const active = isPathActive(pathname, child);
+                          return (
+                            <Link
+                              key={child.path}
+                              to={child.path}
+                              onClick={onClose}
+                              className={`flex items-center gap-2 px-2 py-2 rounded-r-lg text-sm transition-colors ${
+                                active ? 'bg-blue-500/10 text-blue-400 font-medium border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border-l-4 border-transparent'
+                              }`}
+                            >
+                              <ChildIcon className="w-4 h-4 shrink-0" />
+                              {child.title}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   /* Expanded: fluid grid accordion */
                   <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0'}`}>
                     <div className="overflow-hidden">
-                      <div className="ml-3 pl-3 border-l border-gray-100 space-y-0.5 py-1">
-                        {item.children.map((child) => {
-                          const ChildIcon = child.icon;
-                          const active = isPathActive(pathname, child);
-                          return (
-                            <div key={child.path} ref={(el) => (navRefs.current[child.path] = el)} className="relative">
-                              <Link
-                                to={child.path}
-                                onClick={onClose}
-                                className={`relative z-10 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-200 group/child ${active ? 'bg-blue-50/50 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}
-                              >
-                                <ChildIcon className={cn("w-4 h-4 shrink-0 transition-colors duration-200", active ? "text-blue-600" : "text-slate-400 group-hover/child:text-blue-500")} />
-                                <span className="truncate">{child.title}</span>
-                              </Link>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      {isOpen && (
+                        <div className="ml-3 pl-3 border-l border-slate-700/50 space-y-0.5 py-1">
+                          {item.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            const active = isPathActive(pathname, child);
+                            return (
+                              <div key={child.path} ref={(el) => (navRefs.current[child.path] = el)} className="relative">
+                                <Link
+                                  to={child.path}
+                                  onClick={onClose}
+                                  className={`relative z-10 flex items-center gap-3 px-3 py-2 rounded-r-lg text-sm transition-colors duration-200 ${
+                                    active ? 'bg-blue-500/10 text-blue-400 font-medium border-l-4 border-blue-500' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border-l-4 border-transparent'
+                                  }`}
+                                >
+                                  <ChildIcon className="w-4 h-4 shrink-0" />
+                                  <span className="truncate">{child.title}</span>
+                                </Link>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -244,7 +292,7 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
               <div className="border-t border-gray-100 my-3 relative z-10" />
               {adminItems.map(({ to, label, icon: Icon }) => (
                 <div key={to} className={`relative ${isCollapsed ? 'group' : ''}`} ref={(el) => (navRefs.current[to] = el)}>
-                  <Link to={to} className={`relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-300 ${isActive(to) ? 'bg-blue-50/50 text-blue-700' : 'text-gray-600 hover:text-gray-900'} ${isCollapsed ? 'justify-center' : ''}`} onClick={onClose}>
+                  <Link to={to} className={`relative z-10 flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-300 ${isActive(to) ? 'bg-blue-50/80 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-white/80'} ${isCollapsed ? 'justify-center' : ''}`} onClick={onClose}>
                     <Icon className={cn("w-5 h-5 shrink-0 transition-colors duration-200", isActive(to) ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500")} />
                     <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>{label}</span>
                   </Link>
@@ -277,11 +325,31 @@ export default function Sidebar({ open, onClose, isCollapsed, onToggleCollapse }
         </div>
 
         {/* User footer */}
-        <div className={`border-t border-gray-100 p-4 transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`}>
+        <div className={`border-t border-gray-100 dark:border-slate-800 p-4 transition-all duration-300 ${isCollapsed ? 'px-2' : ''}`}>
+          
+          {/* Theme Toggle */}
+          <div className={`relative mb-3 ${isCollapsed ? 'group' : ''}`}>
+            <button
+              onClick={toggleTheme}
+              className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition ${isCollapsed ? 'justify-center' : ''}`}
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
+              <span className={`truncate transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>
+                {theme === 'dark' ? 'Terang' : 'Gelap'}
+              </span>
+            </button>
+            {isCollapsed && (
+              <div aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/70 dark:bg-slate-800/90 backdrop-blur-xl border border-white/40 dark:border-slate-700 shadow-xl opacity-0 invisible scale-95 -translate-x-1 group-hover:opacity-100 group-hover:visible group-hover:scale-100 group-hover:translate-x-0 transition-all duration-100 ease-out pointer-events-none z-[60] whitespace-nowrap">
+                {theme === 'dark' ? <Sun className="w-5 h-5 shrink-0 text-slate-300" /> : <Moon className="w-5 h-5 shrink-0 text-gray-700" />}
+                <span className="text-sm font-semibold text-gray-800 dark:text-slate-200">{theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}</span>
+              </div>
+            )}
+          </div>
+
           <div className={`relative ${isCollapsed ? 'group' : ''}`}>
             <button 
               onClick={() => setIsProfileModalOpen(true)}
-              className={`flex items-center gap-3 w-full mb-3 px-2 py-2 rounded-xl hover:bg-gray-50 transition-colors text-left ${isCollapsed ? 'justify-center' : ''}`}
+              className={`flex items-center gap-3 w-full mb-3 px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-left ${isCollapsed ? 'justify-center' : ''}`}
             >
               <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0 overflow-hidden border border-gray-200">
                 {user?.avatar_url ? (

@@ -1,1 +1,14 @@
 @import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --animate-sweep-interval: sweep-interval 6s linear infinite;
+  
+  @keyframes sweep-interval {
+    0% { transform: rotate(0deg); opacity: 0; }
+    5% { opacity: 1; }
+    20% { transform: rotate(360deg); opacity: 0; }
+    100% { transform: rotate(360deg); opacity: 0; }
+  }
+}
+
